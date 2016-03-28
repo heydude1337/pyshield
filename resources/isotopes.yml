@@ -1,0 +1,59 @@
+F-18:
+  h(10) [uSv/h per MBq/m^2]: 0.166
+  Half time [min]: 109.7
+  labda [s^-1]: 1.05e-4
+  Energy [keV]: 511 
+  Half value thickness [cm]:
+    Lead: 0.42
+    Concrete: 3.41
+    Concrete Barite: 2.26
+    Lead Glass: 0.80  
+    Robaliet: 2.07 
+F-18 Patient:
+  h(10) [uSv/h per MBq/m^2]: 0.092
+  Half time [min]: 109.7
+  labda [s^-1]: 1.05e-4
+  Energy [keV]: 511 
+  Half value thickness [cm]:
+    Lead: 0.42
+    Concrete: 3.4
+    Concrete Barite: 2.26
+    Lead Glass: 0.80
+    Robaliet: 2.07
+Ge-68 Generator:
+  h(10) [uSv/h per MBq/m^2]: 0.0016
+  labda [s^-1]: 2.79e-8
+  Half time [min]: 415000
+  Energy [keV]: 511
+  Half value thickness [cm]:
+    Lead: 0.42
+    Concrete: 3.41
+    Concrete Barite: 2.26
+    Lead Glass: 0.80
+    Robaliet: 2.07
+Ga-68:
+  h(10) [uSv/h per MBq/m^2]: 0.16
+  labda [s^-1]: 1.70e-4
+  Half time [min]: 68
+  Energy [keV]: 511
+  Half value thickness [cm]:
+    Lead: 0.42
+    Concrete: 3.41
+    Concrete Barite: 2.26
+    Lead Glass: 0.80
+    Robaliet: 2.07
+Ge-68:
+  h(10) [uSv/h per MBq/m^2]: 0.16
+  labda [s^-1]: 2.79E-8
+  Half time [min]: 415000
+  Energy [keV]: 511
+  Half value thickness [cm]:
+    Lead: 0.42
+    Concrete: 3.41
+    Concrete Barite: 2.26
+    Lead Glass: 0.80
+    Robaliet: 2.07
+
+
+
+  

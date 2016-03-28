@@ -1,0 +1,33 @@
+Muur 1:
+  Location [pixels]:
+  - 500
+  - 500
+  - 2000
+  - 500
+  Material [cm]:
+    Lead: 1.2
+Muur 2:
+  Location [pixels]:
+  - 2000
+  - 500
+  - 2000
+  - 2000
+  Material [cm]:
+    Lead: 1.2
+Muur 3:
+  Location [pixels]:
+  - 2000
+  - 2000
+  - 500
+  - 2000
+  Material [cm]:
+    Lead: 1.2
+Muur 4:
+  Location [pixels]:
+  - 500
+  - 2000
+  - 500
+  - 500
+  Material [cm]:
+    Lead: 1.2
+

@@ -1,0 +1,87 @@
+# CT:
+  # Type: X-ray secundary
+  # kVp: 125
+  # Exam: Body
+  # Average DLP: 200
+  # Number of exams: 800
+  # Location [pixels]:
+    # - 1400
+    # - 700
+
+Bron 1:
+  Type: Isotope
+  Location [pixels]:
+    - 1000
+    - 1000
+  Material [cm]: {}
+  N desintegrations [year^-1]: 360000000000
+  Isotope: F-18
+
+
+# Patient op PET/CT:
+  # Type: Isotope
+  # Isotope: F-18 Patient
+  # Location [pixels]:
+    # - 1400
+    # - 700
+  # Material [cm]: {}
+  #N desintegrations [year^-1]: 1.149e+15
+  # N desintegrations [year^-1]: 630343586259111.9
+# Patient in WW 3.4.3b:
+  # Type: Isotope
+  # Isotope: F-18 Patient
+  # Location [pixels]:
+    # - 1020
+    # - 1650
+  # Material [cm]: {}
+  # N desintegrations [year^-1]: 1.679e+14
+# Patient in WW 3.4.7a:
+  # Type: Isotope
+  # Isotope: F-18 Patient
+  # Location [pixels]:
+    # - 1500
+    # - 1600
+  # Material [cm]: {}
+  # N desintegrations [year^-1]: 6.715e+14
+# Patient in WW 3.4.7b:
+  # Type: Isotope
+  # Isotope: F-18 Patient
+  # Location [pixels]:
+    # - 1500
+    # - 1225
+  # Material [cm]: {}
+  # N desintegrations [year^-1]: 6.715e+14
+# Lab Uitpakken/Toedien gereedmaken:
+  # Type: Isotope
+  # Isotope: F-18
+  # Location [pixels]:
+    # - 2500
+    # - 1360
+  # Material [cm]: {}
+  # N desintegrations [year^-1]: 6.678e+13
+# FDG Kluis:
+  # Type: Isotope  
+  # Isotope: F-18
+  # Location [pixels]:
+    # - 2450
+    # - 995
+  # Material [cm]:
+    # Lead: 5
+  # N desintegrations [year^-1]: 9.644e+15
+#Patient Toilet 3.4.8:
+#  Type: Isotope
+#  Isotope: F-18 Patient
+#  Location [pixels]:
+#    - 2754
+#    - 1756
+#  Material [cm]: {}
+#  N desintegrations [year^-1]: 6.678e+13
+# Patient Toilet 3.4.4b:
+  # Type: Isotope
+  # Isotope: F-18 Patient
+  # Location [pixels]:
+    # - 705
+    # - 1678
+  # Material [cm]: {}
+  # N desintegrations [year^-1]: 6.678e+13
+  

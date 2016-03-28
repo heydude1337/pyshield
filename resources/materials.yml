@@ -1,0 +1,43 @@
+Lead:
+  Density [g/cm^3]: 11.34
+  Composition:
+    Pb: 1
+Lead Glass:
+  Composition:
+    #source: http://physics.nist.gov/PhysRefData/XrayMassCoef/tab2.html
+    O: 0.156453
+    Si: 0.080866
+    Ti: 0.008092
+    As: 0.002651
+    Pb: 0.751938
+Concrete:
+  Density [g/cm^3]: 2.3
+  Composition:
+  #source: http://physics.nist.gov/PhysRefData/XrayMassCoef/tab2.html
+    H: 0.022100
+    C: 0.002484
+    O: 0.574930 
+    Na: 0.015208
+    Mg: 0.001266
+    Al: 0.019953
+    Si: 0.304627
+    K: 0.010045
+    Ca: 0.042951
+    Fe: 0.006435
+Robaliet:
+  Density [g/cm^3]: 3.7
+
+Concrete Barite:
+  Density [g/cm^3]: 3.35
+  Composition:
+  #source: http://physics.nist.gov/PhysRefData/XrayMassCoef/tab2.html
+    H: 0.003585
+    O: 0.311622
+    Mg: 0.001195
+    Al: 0.004183
+    Si: 0.010457
+    S: 0.107858
+    Ca: 0.050194
+    Fe: 0.047505
+    Ba: 0.463400
+
