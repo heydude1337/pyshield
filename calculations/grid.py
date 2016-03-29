@@ -6,7 +6,7 @@ on each point of the grid.
 Last Updated 05-02-2016
 """
 import numpy as np
-from pyshield import const, data, config, log, update_config
+from pyshield import const, prefs, data, log
 import pyshield.calculations.isotope as calc_isotope
 import pyshield.calculations.xray as calc_xray
 
@@ -23,7 +23,7 @@ def calc_dose_grid_source(source, grid = None):
     """
  
 
-  if grid is None: grid= make_grid(step_size = config[const.GRIDSIZE]) 
+  if grid is None: grid= make_grid(step_size = prefs[const.GRIDSIZE]) 
   shielding = data[const.SHIELDING]
   
   # calculate x-ray (CT) or calculate isotopes

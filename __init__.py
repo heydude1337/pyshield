@@ -21,7 +21,7 @@
   
   """
   
-
+import errors
 from os.path import split 
 __author__ = "Marcel Segbers"
 __copyright__ = "Copyright 2016, The pyshield Project"
@@ -32,17 +32,15 @@ __email__ = "m.segbers@erasmusmc.nl"
 __status__ = "Beta"
 __pkg_root__ = split(__file__)[0]
 
-
+prefs = {}       # preferences specified by commandline arguments (see run.py)
+resources = {}  # static resources located in the resource directory
+data = {}       # shielding, sources and scale factor
 from pyshield import constants as const
 from pyshield.log import log
-from pyshield.config_and_data import config, data, update_config, set_file
-
-from os.path import join, split
 from pyshield.visualization import show, save, show_floorplan
 
 
 
-update_config()
 
 
 

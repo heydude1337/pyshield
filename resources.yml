@@ -1,6 +1,6 @@
 
-Isotopes: ./resources/isotopes.yml
-Materials: ./resources/materials.yml
-X-ray secundary: ./resources/archer_secondary.yml
-Buildup: ./resources/buildup.xlsx  
+Isotopes: isotopes.yml
+Materials: materials.yml
+X-ray secundary: archer_secondary.yml
+Buildup: buildup.xlsx  
 

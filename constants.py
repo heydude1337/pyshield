@@ -2,56 +2,23 @@
 
     Last Updated 05-02-2016 """
 
-CONFIG_FILE = 'config.yml'
+DEF_PREFERENCE_FILE = 'default_preferences.yml'
 RESOURCE_FILE = 'resources.yml'
 
-#----------Fields that need to be defined in the config file-------------------
-GRIDSIZE = 'Gridsize'
-PYTHAGORAS = 'Pythagoras'
-SCALE = 'Scale'
-CLIM_HEATMAP='CLim Heatmap' 
-COLORMAP = 'Colormap'
-IGNORE_BUILDUP = 'Ignore Buildup'
-MULTI_CPU = 'Multiple CPU'
+SUM_SOURCES = 'sum_sources'
+#FILE_TYPE = 'File type'
 
-LOG_LEVEL = 'Log level'
-LOG_LEVEL_INFO = 'Default'
-LOG_LEVEL_DEBUG = 'All'
 
-ISOCONTOURS = 'Isocontours'
-#values of isocontours
-VALUES= 'Values'
-COLORS = 'Colors' 
+#==============================================================================
+# Resources
+#==============================================================================
 
-EXPORT = 'Export'
-SHOW = 'Show'
-#Values of export/show
-SUM_SOURCES = 'Sum sources'
-ALL_SOURCES = 'All sources'
-SAVE_DISPLAYED = 'Save displayed figures'
-FILE_TYPE = 'File type'
-DPI = 'DPI'
-EXPORT_DIR = 'Export directory'
-EXPORT_RAW = 'Export raw'
-EXPORT_RAW_FNAME =   'Export raw filename' 
-EXPORT_FIG_FNAME = 'Export figures filename'
-#data file keys
-FILES = 'Files'
-#Values of FILES
-SOURCES = 'Sources'
-SHIELDING = 'Shielding'
-ISOTOPES = 'Isotopes'
-FLOOR_PLAN = 'Floor plan'
 MATERIALS = 'Materials'
 XRAY_SHIELDING = 'X-ray_shielding'
-BUILDUP = 'Buildup'
-#-----------------------------------------------------------------------------
 
-#----------------------Shielding file-----------------------------------------
-LOCATION = 'Location [pixels]'
-MATERIAL = 'Material [cm]'
-#-----------------------------------------------------------------------------
-         
+ISOTOPES = 'Isotopes'
+BUILDUP = 'Buildup'
+
 #--------------------Materials file--------------------------------------------
 DENSITY = 'Density [g/cm^3]' 
 #-----------------------------------------------------------------------------
@@ -68,8 +35,61 @@ HALF_VALUE_THICKNESS = 'Half value thickness [cm]'
 MFP='Mean Free path'
 ENERGY='Energy [keV]'
 BUILDUP_FACTORS='Buildup Factors'
-#
+#-----------------------------------------------------------------------------
  
+
+
+#==============================================================================
+# commandline arguments
+#==============================================================================
+
+#required options
+SOURCES = 'sources'
+SHIELDING = 'shielding'
+FLOOR_PLAN = 'floorplan'
+
+#PREFERENCES = 'preferences'
+SCALE = 'scale'
+EXPORT_DIR = 'export_dir'
+GRIDSIZE = 'grid_size'
+PYTHAGORAS = 'pythagoras'
+
+CLIM_HEATMAP='clim_heatmap' 
+COLORMAP = 'colormap'
+IGNORE_BUILDUP = 'disable_buildup'
+MULTI_CPU = 'multiple_cpu'
+
+ISO_VALUES='iso_values'
+ISO_COLORS='iso_colors'
+
+SHOW = 'show'
+SAVE_DATA = 'save_data'
+SAVE_IMAGES = 'save_images'
+IMAGE_DPI = 'image_dpi'
+
+
+#ISOCONTOURS = 'socontours'
+#values of isocontours
+#VALUES= 'Values'
+#COLORS = 'Colors' 
+
+
+
+#Values of export/show
+
+#ALL_SOURCES = 'All sources'
+#SAVE = 'Save displayed figures'
+#
+##DPI = 'DPI'
+#
+#
+#
+#EXPORT_RAW_FNAME =   'Pickle File' 
+#EXPORT_FIG_FNAME = 'Image File'
+##data file keys
+#FILES = 'Files'
+#Values of FILES
+
 #----------------------Sources file-------------------------------------------
 ISOTOPE = 'Isotope'
 DESINT = 'N desintegrations [year^-1]' 
@@ -84,6 +104,19 @@ NUMBER_EXAMS = 'Number of exams'
 XRAY_SECONDARY = 'X-ray secundary'
 NUMBER_OF_EXAMS = 'Number of exams'
 #-----------------------------------------------------------------------------
+
+#----------------------Shielding file-----------------------------------------
+LOCATION = 'Location [pixels]'
+MATERIAL = 'Material [cm]'
+#-----------------------------------------------------------------------------
+       
+
+
+
+
+
+
+  
 
 
 

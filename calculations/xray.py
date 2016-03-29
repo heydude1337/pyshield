@@ -12,9 +12,9 @@ KHEAD = 9e-5 #cm^-1
 
 import numpy as np
 
-from pyshield import const, config, data
+from pyshield import const, prefs, data, log
 from pyshield.calculations.barrier import sum_shielding_line 
-
+from pyshield.resources import resources
 
 
 def CTdose_1m(DLP, body_part=const.BODY, N=1):     
@@ -51,12 +51,12 @@ def sum_attenuation(sum_shielding, kVp):
   # find attenuation for each material thickness
   for material, thickness_cm in sum_shielding.items():
     # lookup material dependend parameters in the data
-    alpha, beta, gamma = data[const.XRAY_SECONDARY][material][kVp]
+    alpha, beta, gamma = resources[const.XRAY_SECONDARY][material][kVp]
     attenuation *= archer_attenuation(thickness_cm, alpha, beta, gamma) 
   return attenuation
   
 def calc_dose_source_at_location(source, location, shielding):   
-  scale=config[const.SCALE]
+  scale=data[const.SCALE]
   """" Calculates the dose that will be measured in location given a source 
   specified by source and a shielding specified by shielding.
   

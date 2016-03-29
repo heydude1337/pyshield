@@ -1,4 +1,7 @@
 
+#Trash
+trash/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -86,5 +89,3 @@ ENV/
 .spyderproject
 
 
-#log
-.log

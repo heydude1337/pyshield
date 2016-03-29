@@ -10,30 +10,26 @@ from pyshield import  __pkg_root__
 from os.path import join
 
 LOG_FILE = 'pyshield.log'
-#LOG_ERROR = 'Invalid log level set in config file. Use {0} or {1} as value.'.format(const.LOG_LEVEL_INFO, const.LOG_LEVEL_DEBUG)
+LOG_TO_FILE = True
+LOG_TO_STDOUT = True
+LOG_LEVEL = logging.DEBUG
 
-## set log level based on setting in config file
-#if const.LOG_LEVEL in config.keys():
-#  if config[const.LOG_LEVEL] == const.LOG_LEVEL_INFO:    
-#    LOG_LEVEL = logging.INFO
-#  elif config[const.LOG_LEVEL] == const.LOG_LEVEL_DEBUG:
-#    LOG_LEVEL = logging.DEBUG
-#  else: 
-#    print()
-#else:
-#  LOG_LEVEL = logging.INFO #default
-  
-LOG_LEVEL = logging.INFO
-  
 # create logging object and set format
 log=logging.getLogger('pyshield')
-
-
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
 
+#create file handler
 fileHandler = logging.FileHandler(join(__pkg_root__,LOG_FILE), mode = 'w')
 fileHandler.setFormatter(formatter)
+#create handler for text logging to console
+stdoutHandler = logging.StreamHandler()
+stdoutHandler.setFormatter(formatter)
 
-log.setLevel(LOG_LEVEL)
-log.addHandler(fileHandler)
+
+# add handlers
+
+if LOG_TO_FILE: log.setLevel(LOG_LEVEL)
+if LOG_TO_STDOUT: log.addHandler(fileHandler)
+
+
 log.propagate = False # prevent logging to console

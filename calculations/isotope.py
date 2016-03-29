@@ -5,8 +5,9 @@ Isotope calculations for pyshield package
 Last Updated 05-02-2016
 """
 
-from pyshield import data, const, config, log
+from pyshield import const, prefs, data, log
 from pyshield.calculations.barrier import sum_shielding_line
+from pyshield.resources import resources
 import numpy as np
 import scipy.interpolate as interp
 import pickle
@@ -31,13 +32,13 @@ def calc_dose_source_on_grid(source, grid):
   shielding = data[const.SHIELDING]
   isotope   = source[const.ISOTOPE]
   # c
-  ignore_buildup = config[const.IGNORE_BUILDUP]  
+  ignore_buildup = prefs[const.IGNORE_BUILDUP]  
   A_eff = equivalent_activity(source[const.DESINT], isotope)  
   loc =source[const.LOCATION]
   
-  scale = config[const.SCALE]
+  scale = data[const.SCALE]
 
-  h10 = data[const.ISOTOPES][isotope][const.H10]
+  h10 = resources[const.ISOTOPES][isotope][const.H10]
   
   grid_size = grid[0].shape
   
@@ -77,7 +78,7 @@ def calc_dose_source_at_location(source, location, shielding):
   scale = config[const.SCALE]
   ignore_buildup = config[const.IGNORE_BUILDUP]
   A_eff = equivalent_activity(source[const.DESINT], isotope)
-  h10 = data[const.ISOTOPES][isotope][const.H10]
+  h10 = resources[const.ISOTOPES][isotope][const.H10]
   log.debug('Source location: '  + str(source_location))
   log.debug('Grid location: '  + str(location))
   # obtain total shielding between source location and the given location
@@ -148,27 +149,27 @@ def sum_buildup(sum_shielding, source):
   
   #buildup from shielding barriers
   for material, thickness in sum_shielding.items():
-    if material in data[const.BUILDUP]:
-      hvt = data[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material]
+    if material in resources[const.BUILDUP]:
+      hvt = resources[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material]
       mu_lin =1 / np.log(2) * hvt
       n_mfp = thickness / mu_lin
-      energy_keV = data[const.ISOTOPES][isotope][const.ENERGY]
+      energy_keV = resources[const.ISOTOPES][isotope][const.ENERGY]
       b *= buildup(material, energy_keV, n_mfp)
   
   #buildup from shielding around source
   for material in source[const.MATERIAL].items():
-    if material in data[const.BUILDUP]:
-      hvt = data[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material]
+    if material in resources[const.BUILDUP]:
+      hvt = resources[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material]
       mu_lin =1 / np.log(2) * hvt
       n_mfp = thickness / mu_lin
-      energy_keV = data[const.ISOTOPES][isotope][const.ENERGY]
+      energy_keV = resources[const.ISOTOPES][isotope][const.ENERGY]
       b *= buildup(material, energy_keV, n_mfp)
       
     
   return b
     
 def attenuation(material, thickness, isotope):
-  HVT = data[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material] 
+  HVT = resources[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material] 
   n_HVT = thickness/HVT
   a = 0.5**n_HVT
   log.debug('Material: ' + material + ' Thickness: ' + str(thickness) + ' Isotope: '+ isotope)
@@ -193,9 +194,9 @@ def buildup(material, energy_keV, n_mfp_i):
 #  if material == 'Robaliet':
 #    factor = 3.5
 #  else:
-  n_mfp = data[const.BUILDUP][material][const.MFP]
-  energies = data[const.BUILDUP][material][const.ENERGY]
-  factors = data[const.BUILDUP][material][const.BUILDUP_FACTORS]
+  n_mfp = resources[const.BUILDUP][material][const.MFP]
+  energies = resources[const.BUILDUP][material][const.ENERGY]
+  factors = resources[const.BUILDUP][material][const.BUILDUP_FACTORS]
   energy_meV = energy_keV/1000  
 #  if energies.size == 1:
 #     interp_func=interp.interp1d(n_mfp, factors)

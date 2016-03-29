@@ -9,7 +9,7 @@ from pyshield.calculations.line_intersect import intersect_line, angle_between_l
 import numpy as np
 import math
 
-from pyshield import config, const, log
+from pyshield import const, prefs, data, log
 
 def sum_shielding_line(source_location, location, shielding):
     """ Calculates the amount of shielding between two points source_location en location
@@ -48,7 +48,7 @@ def sum_shielding_line(source_location, location, shielding):
           points.append(p)
           log.debug('Intersection at: ' + str(p))
           # calculate the angle of intersection or assume 90 degrees
-          if config[const.PYTHAGORAS]:
+          if prefs[const.PYTHAGORAS]:
             theta = angle_between_lines(L0,L1)    
           else:
             theta = 0.5 * math.pi

@@ -10,7 +10,8 @@ Last Updated 05-02-2016
 
 
 from matplotlib import pyplot as plt
-from pyshield import config, data, log, const
+from pyshield import const, prefs, data, log
+from pyshield.resources import resources
 from pyshield.calculations.isotope import equivalent_activity
 from os.path import join
 from datetime import datetime
@@ -20,12 +21,9 @@ import numpy as np
 SOURCE = 'Source'
 SHIELDING = 'Shielding'
 
-
-
-
 def show_floorplan():
+    
   """ Show shielding barriers on top of floor plan. """
-  
   floor_plan = data[const.FLOOR_PLAN]
   shielding=data[const.SHIELDING]
   sources=data[const.SOURCES]
@@ -59,18 +57,15 @@ def show_floorplan():
     else:
       raise
       
-    print(text)
-    
     text_label.set_text(text)
     event.canvas.draw()
     return True
-  
         
   def draw_thickness(barrier):
     """ Barrier thickness weighted by density """
     d=0
     for material, thickness in barrier[const.MATERIAL].items():       
-      d += (thickness * data[const.MATERIALS][material][const.DENSITY])
+      d += (thickness * resources[const.MATERIALS][material][const.DENSITY])
     return d
       
   # show floor plan 
@@ -92,7 +87,6 @@ def show_floorplan():
   
   # enable mouse interaction     
   
-
   # plot red dot at source locations
   for name, source in sources.items():
       point, = plt.plot(*source[const.LOCATION], 'ro', picker = 5)
@@ -104,9 +98,9 @@ def show_floorplan():
 def plot_dose_map(floorplan, dose_map=None):
   """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
   
-  isocontours = config[const.ISOCONTOURS]
-  clim = config[const.CLIM_HEATMAP]  
-  colormap = config[const.COLORMAP]
+  
+  clim = prefs[const.CLIM_HEATMAP]  
+  colormap = prefs[const.COLORMAP]
   
   extent = (0.5, floorplan.shape[1]-0.5, 
             floorplan.shape[0]-0.5, 0.5)
@@ -120,15 +114,15 @@ def plot_dose_map(floorplan, dose_map=None):
              cmap=plt.get_cmap(colormap))
   
   # show isocontours
-  C=plt.contour(dose_map, isocontours[const.VALUES],
-                colors=isocontours[const.COLORS],
+  C=plt.contour(dose_map, prefs[const.ISO_VALUES],
+                colors=prefs[const.ISO_COLORS],
                 extent=(extent[0], extent[1],extent[3], extent[2]))
   
   # show isocontour value in line  
   plt.clabel(C, inline=1, fontsize=10)
   
   # show legend for isocontours  
-  plt.legend(C.collections, [str(value) + ' mSv' for value in config[const.ISOCONTOURS][const.VALUES]])
+  plt.legend(C.collections, [str(value) + ' mSv' for value in prefs[const.ISO_VALUES]])
   return fig
 
 
@@ -137,54 +131,42 @@ def show(dose_maps = None):
       save to disk. """
   figures={}
   
-
-    
   # show and save all figures it config property is set to show all
   if dose_maps is not None:  
-    if config[const.SHOW][const.ALL_SOURCES] and config[const.SHOW][const.SUM_SOURCES]:
-      keys = dose_maps.keys()
-    elif config[const.SHOW][const.SUM_SOURCES]:
-      keys = (const.SUM_SOURCES,)
-    elif config[const.SHOW][const.ALL_SOURCES]:
+    if prefs[const.SHOW].lower() == 'all':
       keys = list(dose_maps.keys())
-      keys.remove(const.SUM_SOURCES)
+      keys.append(const.SUM_SOURCES)
+    elif prefs[const.SHOW].lower() == 'sum':
+      keys = (const.SUM_SOURCES,)
   else:
-
     show_floorplan()
-    return
+    return {}
     
-    # iterate over dosemaps    
-  
-  
-  
+    
+
+  # iterate over dosemaps    
   for key in keys:
     dmap = dose_maps[key]      
     figures[key] = plot_dose_map(data[const.FLOOR_PLAN], dmap)
     figures[key].canvas.set_window_title(key)
     plt.gca().set_title(key)
     maximize_window()
-      
-
-      
-
   return figures
         
       
 def save(figures = None, dose_maps = None):
-  if not(config[const.EXPORT][const.SAVE_DISPLAYED]):
-    log.debug('No figures are displayed')
-  elif figures is not None:  
+  if prefs[const.SAVE_IMAGES]:
     for name, figure in figures.items():
       save_figure(figure, name.lower())
       
   
-  if dose_maps is not None and config[const.EXPORT][const.EXPORT_RAW]:
-    fname = config[const.EXPORT][const.EXPORT_RAW_FNAME]
+  if dose_maps is not None and prefs[const.SAVE_DATA]:
+    fname = prefs[const.EXPORT_RAW_FNAME]
     if '{time_stamp}' in fname:
       time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
       fname = fname.format(time_stamp = time_stamp)
      
-    fname = join(config[const.EXPORT][const.EXPORT_DIR], fname)
+    fname = join(prefs[const.EXPORT_DIR], fname)
     log.debug('Pickle dumping data: ' + fname)
     pickle.dump(dose_maps, open(fname, 'wb'))
     log.debug('results dumped to file: ' + fname)
@@ -209,20 +191,18 @@ def maximize_window():
       log.warn('Cannot maximize a pyplot figure that uses ' + backend + ' as backend')
     return
     
-    
-    
 def save_figure(fig, source_name):
   """ save specifed figure to disk, file name gets a time stamp appended"""  
   
-  fname = config[const.EXPORT][const.EXPORT_FIG_FNAME]
+  fname = prefs[const.EXPORT_FIG_FNAME]
   if '{time_stamp}' and '{source_name}' in fname:  
     time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
     fname = fname.format(time_stamp = time_stamp, source_name = source_name)
   else:
       log.error('Invalid filename: ' + fname)
   
-  fname = join(config[const.EXPORT][const.EXPORT_DIR], fname)
-  dpi = config[const.EXPORT][const.DPI]
+  fname = join(prefs[const.EXPORT][const.EXPORT_DIR], fname)
+  dpi = prefs[const.EXPORT][const.DPI]
   log.debug('Writing: ' + fname)
   fig.savefig(fname, dpi=dpi, bbox_inches='tight')
   
