@@ -67,6 +67,7 @@ SAVE_DATA = 'save_data'
 SAVE_IMAGES = 'save_images'
 IMAGE_DPI = 'image_dpi'
 
+CALCULATE = 'calculate'
 
 #ISOCONTOURS = 'socontours'
 #values of isocontours
@@ -93,6 +94,10 @@ IMAGE_DPI = 'image_dpi'
 #----------------------Sources file-------------------------------------------
 ISOTOPE = 'Isotope'
 DESINT = 'N desintegrations [year^-1]' 
+ACTIVITY = 'Activity [MBq]'
+DURATION = 'Duration [h]'
+TIMES_PER_YEAR = 'Number of times per year'
+DECAY_CORRECTION = 'Decay correction'
 TYPE = 'Type'
 EXAM = 'Exam'
 

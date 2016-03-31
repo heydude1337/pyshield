@@ -10,21 +10,31 @@ from pyshield.calculations.barrier import sum_shielding_line
 from pyshield.resources import resources
 import numpy as np
 import scipy.interpolate as interp
-import pickle
-def equivalent_activity(ndesintegrations, isotope):
-  """Calculates the activity in MBq that will have ndesintegraties of desintegrations
-  in one hour.
-  
-  ndesintegrations:  number of desintegrations
-  isotope: Isotope name (should be in the isotopes.yml file)
-  """
+#import pickle
+def equivalent_activity(source):
+
+  isotope = source[const.ISOTOPE]
+  if const.DESINT in source.keys():
+    ndesintegrations = source[const.DESINT]
+  elif const.ACTIVITY in source.keys() and const.DURATION in source.keys():
+    activity_bq = source[const.ACTIVITY] * 1e6
+    duration_h = source[const.DURATION]
+    if const.TIMES_PER_YEAR in source.keys():
+      times_per_year = source[const.TIMES_PER_YEAR]
+    else:
+      times_per_year = 1
     
-  #labda = data[const.ISOTOPES][isotope][const.LABDA]
+    if const.DECAY_CORRECTION in source.keys():
+      decay_corr = source[const.DECAY_CORRECTION]
+    else:
+      decay_corr = True
+    
+    if decay_corr:
+      labda = data[const.ISOTOPES][isotope][const.LABDA]
+      ndesintegrations = activity_bq * times_per_year * (1/labda - np.exp(-labda*duration_h*3600))
+    else:
+      ndesintegrations = activity_bq * times_per_year * duration_h * 3600
   
-  # number of desintegrations per Bq in one hour     
-  #N_Bq = 1/labda * (1-np.exp(-labda*60*60)) 
- 
- 
   return ndesintegrations/3600/1E6
 
 def calc_dose_source_on_grid(source, grid):
@@ -33,7 +43,7 @@ def calc_dose_source_on_grid(source, grid):
   isotope   = source[const.ISOTOPE]
   # c
   ignore_buildup = prefs[const.IGNORE_BUILDUP]  
-  A_eff = equivalent_activity(source[const.DESINT], isotope)  
+  A_eff = equivalent_activity(source)  
   loc =source[const.LOCATION]
   
   scale = data[const.SCALE]
@@ -57,11 +67,11 @@ def calc_dose_source_on_grid(source, grid):
     else:
       bi[...] = sum_buildup(sum_shielding, source)
     
-  results = {'distance_r': distance_r,
-             'attenuation': attenuation,
-             'buildup': buildup,
-             'activity': A_eff}
-  pickle.dump(results, open('temp.dat', 'wb'))
+#  results = {'distance_r': distance_r,
+#             'attenuation': attenuation,
+#             'buildup': buildup,
+#             'activity': A_eff}
+#  pickle.dump(results, open('temp.dat', 'wb'))
   dose_map = A_eff/(distance_r ** 2) * attenuation * buildup * h10 / 1000
   return dose_map
   
@@ -75,8 +85,8 @@ def calc_dose_source_at_location(source, location, shielding):
   
   source_location=source[const.LOCATION]
   isotope = source[const.ISOTOPE]
-  scale = config[const.SCALE]
-  ignore_buildup = config[const.IGNORE_BUILDUP]
+  scale = data[const.SCALE]
+  ignore_buildup = prefs[const.IGNORE_BUILDUP]
   A_eff = equivalent_activity(source[const.DESINT], isotope)
   h10 = resources[const.ISOTOPES][isotope][const.H10]
   log.debug('Source location: '  + str(source_location))

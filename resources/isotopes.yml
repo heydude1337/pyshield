@@ -53,7 +53,16 @@ Ge-68:
     Concrete Barite: 2.26
     Lead Glass: 0.80
     Robaliet: 2.07
-
-
-
+In-111:
+  h(10) [uSv/h per MBq/m^2]:  0.087
+  Energy [keV]: 145
+  labda [s^-1]: 2.86e-6
   
+  Half value thickness [cm]:
+    Lead: 0.06
+Lu-177:
+  h(10) [uSv/h per MBq/m^2]:  0.0063
+  labda [s^-1]: 1.2e-6
+  Energy [keV]: 113
+  Half value thickness [cm]:
+    Lead: 0.06

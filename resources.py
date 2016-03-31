@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from pyshield import __pkg_root__, const, log, errors
-from yaml_wrap import yaml_wrap
+import pyshield
+from pyshield import __pkg_root__, const, log, excel_import
+from pyshield.yaml_wrap import yaml_wrap
 import os
 from os.path import join, splitext
 
-import Excel
+
 import matplotlib.image as mpimg
 
 
@@ -31,18 +32,18 @@ def read_resource(file):
   if ext in ('.yml','.yaml'):
     data=yaml_wrap.read_yaml(file)
   elif ext in ('.xls', '.xlsx'):
-    data=Excel.read.read_excel_file(file)
+    data=excel_import.read_excel_file(file)
   elif ext in ('.png', '.jpeg', '.jpg'):
     data=mpimg.imread(file)
   else:
-    print(errors.FILE_ERROR.format(file=file))
+    print(pyshield.ERR_FILE.format(file=file))
     raise
   return data
  
 
 def format_buildup_data(data):
   for material in data.keys():
-    data[material] = Excel.read.parse_sheet_data(
+    data[material] = excel_import.parse_sheet_data(
                                 data[material], 
                                 row_column_header=0, 
                                 column_row_header=0,

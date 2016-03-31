@@ -6,7 +6,9 @@ Created on Mon Mar 28 18:17:39 2016
 """
 
 import argparse
-from pyshield import const, data, prefs, show
+import pyshield
+from pyshield import const, data, prefs
+from pyshield.visualization import show, show_floorplan
 from pyshield.resources import read_resource
 from pyshield import log, __pkg_root__
 from os.path import join
@@ -14,8 +16,13 @@ from pyshield.calculations.grid import calc_dose_grid_source, sum_dose
 
 def load_conf(conf):
   data_file_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN)  
-  for key in data_file_keys:   
-    conf[key] = read_resource(conf[key])
+  for key in data_file_keys:
+    if conf[key] is not None:
+      try:
+        conf[key] = read_resource(conf[key])
+      except:
+        print(pyshield.WARN_MISSING.format(missing = key))
+        raise
   return conf
     
 def set_conf(conf):
@@ -50,7 +57,7 @@ def parse_args():
   ISO_VALUES_HELP = 'Isocontours for these dose values will be drawn. Number of values must match number of colors'
   ISO_COLORS_HELP = 'Colors for the isocontours. Number of colors must match number of values'
   DIS_BUILDUP_HELP = 'When True buildup will be disabled (testing purpuses)'
-  
+  CALCULATE_HELP = 'Perform calculation'
   parser = argparse.ArgumentParser()
   add = parser.add_argument  
   
@@ -59,11 +66,12 @@ def parse_args():
   str_float_list = lambda s: [float(item) for item in s.split(',')]
   str_list = lambda s: [item for item in s.split(',')]
   
-  add('--sources','--src', required = True, help = SOURCES_HELP)
-  add('--shielding', '--sh', required = True, help= SHIELDING_HELP)
-  add('--floorplan', '--f', required = True, help=FLOORPLAN_HELP)
+  add('--sources','--src', required = False, default = None, type = str, help = SOURCES_HELP)
+  add('--shielding', '--sh', required = False, default = None, type = str,help= SHIELDING_HELP)
+  add('--floorplan', '--f', required = True, default = None, type = str, help=FLOORPLAN_HELP)
   #add('--preferences', '--p', default = const.DEFAULT, required = False, help='Specify a yaml with with the desired preferences')
   add('--scale', '--sc', required = False, default = def_prefs[const.SCALE], type = float,  help= SCALE_HELP)
+  add('--calculate', '--c', required = False, default = def_prefs[const.CALCULATE], type = bool, help = CALCULATE_HELP)
   add('--export_dir', '-e', required = False, default = def_prefs[const.EXPORT_DIR], type=str, help = EXPORT_DIR_HELP)
   add('--grid_size', required = False, default = def_prefs[const.GRIDSIZE], type = float, help = GRID_SIZE_HELP)
   add('--clim_heatmap', required=False, default = def_prefs[const.CLIM_HEATMAP], type = str_float_list, help = CLIM_HEATMAP_HELP )
@@ -94,18 +102,17 @@ if __name__ == '__main__':
   log.info('\n-----Loading settings-----\n')
   conf = parse_args()
   conf = load_conf(conf)
-  set_conf(conf)
-  log.info('\n-----Starting calculations-----\n')
- 
-  sources = data[const.SOURCES]
- 
- 
-  dose_maps = single_cpu_calculation(sources)
-  dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
-
-  log.info('\n-----Starting visualization-----\n')
- 
-  figs = show(dose_maps)
+  set_conf(conf)  
+  
+  if conf[const.CALCULATE]:
+    log.info('\n-----Starting calculations-----\n')
+    sources = data[const.SOURCES]
+    dose_maps = single_cpu_calculation(sources)
+    dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
+    log.info('\n-----Starting visualization-----\n') 
+    figs = show(dose_maps)
+  else:
+    show_floorplan()
 
 
 

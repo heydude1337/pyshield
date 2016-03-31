@@ -14,6 +14,7 @@ from pyshield import const, prefs, data, log
 from pyshield.resources import resources
 from pyshield.calculations.isotope import equivalent_activity
 from os.path import join
+from os import makedirs
 from datetime import datetime
 import pickle
 import numpy as np
@@ -27,6 +28,8 @@ def show_floorplan():
   floor_plan = data[const.FLOOR_PLAN]
   shielding=data[const.SHIELDING]
   sources=data[const.SOURCES]
+  if shielding is None: shielding = {}
+  if sources is None: sources = {}
   
   def shielding_click(name):
     text = name + ':'
@@ -129,8 +132,7 @@ def plot_dose_map(floorplan, dose_map=None):
 def show(dose_maps = None):
   """ show a dictonary with dosemaps on top of the floor plan and 
       save to disk. """
-  figures={}
-  
+  figures={}  
   # show and save all figures it config property is set to show all
   if dose_maps is not None:  
     if prefs[const.SHOW].lower() == 'all':
@@ -142,8 +144,6 @@ def show(dose_maps = None):
     show_floorplan()
     return {}
     
-    
-
   # iterate over dosemaps    
   for key in keys:
     dmap = dose_maps[key]      
@@ -152,9 +152,10 @@ def show(dose_maps = None):
     plt.gca().set_title(key)
     maximize_window()
   return figures
-        
-      
+         
 def save(figures = None, dose_maps = None):
+  makedirs(prefs[const.EXPORT_DIR], exist_ok=True)
+    
   if prefs[const.SAVE_IMAGES]:
     for name, figure in figures.items():
       save_figure(figure, name.lower())
@@ -172,7 +173,6 @@ def save(figures = None, dose_maps = None):
     log.debug('results dumped to file: ' + fname)
     
 
-          
 def maximize_window():
     """ Maximize the current plot window """
     backend = plt.get_backend()

@@ -12,7 +12,7 @@ scale: 1
 iso_values: '0.1,0.3,1,2.5,5,10'  # Isocontour values in mSv
 iso_colors: 'b,g,y,r,c,m' # Line colors, any valid pyplot color
 export_dir: 'Example\'
-
+calculate: False       # set to false to only display the layout
 
 Export:   # Export settings, the shown plots will be exported as picture
   Export directory: 'Example/'
