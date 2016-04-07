@@ -142,24 +142,7 @@ def plot_lines(lines):
     return
 
 
-#def point_distance(p, L):
-#   """ Calculate all intersections of a  list of lines 
-#    
-#        lines:  A list of lines. Each line is defined by two points
-#                line = ((x0, y0), (x1, y1))"""
-#  x0=p[0]
-#  y0=p[1]
-#  x1=L[0][0]
-#  x2=L[1][0]
-# 
-#  
-#  y1=L[0][1]
-#  y2=L[1][1]
-# 
-#  
-#  d = abs((y2-y1)*x0-(x2-x1)*y0+x2*y1-y2*x1) / math.sqrt((y2-y1)**2+(x2-x1)**2)
-#  return d
-#  
+
 
 def rand_line(bounds=((0,0),(1,1))):
     """ Return a random line 

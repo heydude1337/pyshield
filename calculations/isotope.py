@@ -12,30 +12,46 @@ import numpy as np
 import scipy.interpolate as interp
 #import pickle
 def equivalent_activity(source):
-
+  # amount of activity can be either specified by number of desintegrations
+  # or the amount of activity and the duration for which it is present
+  # Optional the activity corrected for decay during this duration (default). 
+  # Decay correction can be turned off
   isotope = source[const.ISOTOPE]
-  if const.DESINT in source.keys():
+  
+  if const.DESINT in source.keys(): 
+    # number of desintegration specified ACTIVITY and DURATION tags will be ignored
     ndesintegrations = source[const.DESINT]
   elif const.ACTIVITY in source.keys() and const.DURATION in source.keys():
+    # activity and duration specified     
     activity_bq = source[const.ACTIVITY] * 1e6
     duration_h = source[const.DURATION]
     if const.TIMES_PER_YEAR in source.keys():
+      # optional the number of times per year is specified
       times_per_year = source[const.TIMES_PER_YEAR]
     else:
       times_per_year = 1
     
     if const.DECAY_CORRECTION in source.keys():
+      # Turn decay correction on or off
       decay_corr = source[const.DECAY_CORRECTION]
     else:
+      # default correct for decay
       decay_corr = True
     
     if decay_corr:
+      # calculate the number of desintegrations with decau correction
       labda = data[const.ISOTOPES][isotope][const.LABDA]
       ndesintegrations = activity_bq * times_per_year * (1/labda - np.exp(-labda*duration_h*3600))
     else:
+      # calculate the number of desintegrations without decay correction
       ndesintegrations = activity_bq * times_per_year * duration_h * 3600
   
-  return ndesintegrations/3600/1E6
+  # The equivalent activity is the amount of MBq of the isotope that would be 
+  # needed to give the amount of desintegrations in one hour without decay corrections
+  
+  
+  eq_activity = ndesintegrations/3600/1E6
+  return eq_activity
 
 def calc_dose_source_on_grid(source, grid):
   # data
@@ -52,12 +68,14 @@ def calc_dose_source_on_grid(source, grid):
   
   grid_size = grid[0].shape
   
+  # distance gird
   distance_r = np.sqrt((grid[0]-loc[0])**2 + (grid[1] - loc[1])**2) * scale / 100
   attenuation = np.zeros(grid_size)
   buildup = np.zeros(grid_size)
 
   values = (grid[0], grid[1], attenuation, buildup)  
   
+  # iterate over grid
   for xi, yi, ai, bi in np.nditer(values, op_flags = ('readwrite',)):
     sum_shielding=sum_shielding_line(loc, (xi, yi), shielding) 
     ai[...] = sum_attenuation(sum_shielding, source)
@@ -67,15 +85,12 @@ def calc_dose_source_on_grid(source, grid):
     else:
       bi[...] = sum_buildup(sum_shielding, source)
     
-#  results = {'distance_r': distance_r,
-#             'attenuation': attenuation,
-#             'buildup': buildup,
-#             'activity': A_eff}
-#  pickle.dump(results, open('temp.dat', 'wb'))
   dose_map = A_eff/(distance_r ** 2) * attenuation * buildup * h10 / 1000
+  
   return dose_map
   
 def calc_dose_source_at_location(source, location, shielding):   
+  
   """" Calculates the dose that will be measured in location given a source 
   specified by source and a shielding specified by shielding 
   
@@ -83,6 +98,7 @@ def calc_dose_source_at_location(source, location, shielding):
   location:   x, y coordinates for which the dose is calculated
   shielding:  dictonary containing all shielding elements """
   
+
   source_location=source[const.LOCATION]
   isotope = source[const.ISOTOPE]
   scale = data[const.SCALE]
@@ -153,7 +169,7 @@ def sum_buildup(sum_shielding, source):
   
    """
   
-  b = 1
+  b = 1  # default build up is one
   
   isotope = source[const.ISOTOPE]
   
@@ -165,25 +181,31 @@ def sum_buildup(sum_shielding, source):
       n_mfp = thickness / mu_lin
       energy_keV = resources[const.ISOTOPES][isotope][const.ENERGY]
       b *= buildup(material, energy_keV, n_mfp)
+    else:
+      log.debug(material + ' does not have specified buildup factors.')
   
   #buildup from shielding around source
-  for material in source[const.MATERIAL].items():
+
+  for material, thickness in source[const.MATERIAL].items():
     if material in resources[const.BUILDUP]:
       hvt = resources[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material]
       mu_lin =1 / np.log(2) * hvt
       n_mfp = thickness / mu_lin
       energy_keV = resources[const.ISOTOPES][isotope][const.ENERGY]
       b *= buildup(material, energy_keV, n_mfp)
+    else:
+      log.debug(material + ' does not have specified buildup factors.')
       
-    
   return b
     
 def attenuation(material, thickness, isotope):
   HVT = resources[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material] 
   n_HVT = thickness/HVT
   a = 0.5**n_HVT
+  
   log.debug('Material: ' + material + ' Thickness: ' + str(thickness) + ' Isotope: '+ isotope)
   log.debug('Calc. attenuation: ' +  str(a))
+  
   return a
 
 def buildup(material, energy_keV, n_mfp_i):
@@ -194,34 +216,21 @@ def buildup(material, energy_keV, n_mfp_i):
       
   """
   
-  #retrun 0 for 0 thickness
-  #if not(isinstance(n_mfp_i, np.ndarray)):
-    #n_mfp_i = np.array(n_mfp_i)
-    
-  #if all(n_mfp_i == 0): return np.zeros(n_mfp_i.shape)
+
   if n_mfp_i ==0: return 0
     
-#  if material == 'Robaliet':
-#    factor = 3.5
-#  else:
   n_mfp = resources[const.BUILDUP][material][const.MFP]
   energies = resources[const.BUILDUP][material][const.ENERGY]
   factors = resources[const.BUILDUP][material][const.BUILDUP_FACTORS]
   energy_meV = energy_keV/1000  
-#  if energies.size == 1:
-#     interp_func=interp.interp1d(n_mfp, factors)
-#     factor =interp_func(n_mfp_i)
-#  else: 
+
   interp_func= interp.interp2d(n_mfp,energies,  factors, kind = 'linear')
   factor = interp_func(n_mfp_i, energy_meV)
-  
-      
-  
+
   log.debug('Buildup factor:  ' + str(factor))
   log.debug('MFP: '  + str(n_mfp_i))
   log.debug('Energy: ' + str(energy_meV))
   
-
   return np.squeeze(factor)
 
 

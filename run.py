@@ -10,7 +10,7 @@ import pyshield
 from pyshield import const, data, prefs
 from pyshield.visualization import show, show_floorplan
 from pyshield.resources import read_resource
-from pyshield import log, __pkg_root__
+from pyshield import log, __pkg_root__, set_log_level
 from os.path import join
 from pyshield.calculations.grid import calc_dose_grid_source, sum_dose
 
@@ -44,6 +44,7 @@ def parse_args():
   SHIELDING_HELP = 'Specify a yaml file containing the information of the present shielding'
   FLOORPLAN_HELP = 'Specify an image file of the floor plan for the calculation'
   SCALE_HELP =     'Specify the scale of the floorplan in cm/pixel'
+  ORIGIN_HELP =    'Specify the origin in pixels: x,y (no space around the comma)'
   EXPORT_DIR_HELP = 'Specify a directory to which results (data and images) will be saved'
   GRID_SIZE_HELP = 'Specify the distance between grid points in pixels'
   CLIM_HEATMAP_HELP = 'Specify the clim for the heatmap: low,high (notice no space)'
@@ -58,20 +59,22 @@ def parse_args():
   ISO_COLORS_HELP = 'Colors for the isocontours. Number of colors must match number of values'
   DIS_BUILDUP_HELP = 'When True buildup will be disabled (testing purpuses)'
   CALCULATE_HELP = 'Perform calculation'
+  LOG_HELP = 'Set log level (info or debug), debug will shlow down the calculations considerably'
   parser = argparse.ArgumentParser()
   add = parser.add_argument  
   
   # parse comma seperated values to a list (no spaces should be in the string)
   # 1.0,2,5,4.5 will be converted to [1.0, 2, 5, 4.5]
-  str_float_list = lambda s: [float(item) for item in s.split(',')]
-  str_list = lambda s: [item for item in s.split(',')]
+  str_float_list = lambda s: [float(item) for item in s.replace('"', "").split(',')]
+  str_list = lambda s: [item for item in s.replace('"', "").split(',')]
   
   add('--sources','--src', required = False, default = None, type = str, help = SOURCES_HELP)
   add('--shielding', '--sh', required = False, default = None, type = str,help= SHIELDING_HELP)
   add('--floorplan', '--f', required = True, default = None, type = str, help=FLOORPLAN_HELP)
   #add('--preferences', '--p', default = const.DEFAULT, required = False, help='Specify a yaml with with the desired preferences')
   add('--scale', '--sc', required = False, default = def_prefs[const.SCALE], type = float,  help= SCALE_HELP)
-  add('--calculate', '--c', required = False, default = def_prefs[const.CALCULATE], type = bool, help = CALCULATE_HELP)
+  add('--origin', '--o', required = False, default = def_prefs[const.ORIGIN], type = str_float_list, help = ORIGIN_HELP)
+  add('--calculate', '--c', required = False, default = def_prefs[const.CALCULATE],choices=(0,1), type = int, help = CALCULATE_HELP)
   add('--export_dir', '-e', required = False, default = def_prefs[const.EXPORT_DIR], type=str, help = EXPORT_DIR_HELP)
   add('--grid_size', required = False, default = def_prefs[const.GRIDSIZE], type = float, help = GRID_SIZE_HELP)
   add('--clim_heatmap', required=False, default = def_prefs[const.CLIM_HEATMAP], type = str_float_list, help = CLIM_HEATMAP_HELP )
@@ -85,6 +88,7 @@ def parse_args():
   add('--iso_colors', required=False, default=def_prefs[const.ISO_COLORS], type=str_list, help=ISO_COLORS_HELP)
   add('--disable_buildup', required=False, default = def_prefs[const.IGNORE_BUILDUP], type=bool, help= DIS_BUILDUP_HELP)
   add('--image_dpi', '--dpi', required=False, default = def_prefs[const.IMAGE_DPI], type=int, help = IMAGE_DPI_HELP)
+  add('--log', required=False, default=def_prefs[const.LOG], choices = [const.LOG_INFO, const.LOG_DEBUG], help = LOG_HELP)
   return vars(parser.parse_args())
 
 def single_cpu_calculation(sources):
@@ -98,11 +102,16 @@ def single_cpu_calculation(sources):
   return dose_maps
   
 
+    
+
 if __name__ == '__main__':
   log.info('\n-----Loading settings-----\n')
   conf = parse_args()
+  
+  set_log_level(conf[const.LOG])
   conf = load_conf(conf)
   set_conf(conf)  
+  
   
   if conf[const.CALCULATE]:
     log.info('\n-----Starting calculations-----\n')

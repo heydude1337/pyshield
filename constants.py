@@ -50,6 +50,7 @@ FLOOR_PLAN = 'floorplan'
 
 #PREFERENCES = 'preferences'
 SCALE = 'scale'
+ORIGIN = 'origin'
 EXPORT_DIR = 'export_dir'
 GRIDSIZE = 'grid_size'
 PYTHAGORAS = 'pythagoras'
@@ -69,6 +70,9 @@ IMAGE_DPI = 'image_dpi'
 
 CALCULATE = 'calculate'
 
+LOG = 'log'
+LOG_INFO = 'info'
+LOG_DEBUG = 'debug'
 #ISOCONTOURS = 'socontours'
 #values of isocontours
 #VALUES= 'Values'

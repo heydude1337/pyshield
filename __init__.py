@@ -35,8 +35,9 @@ __pkg_root__ = split(__file__)[0]
 prefs = {}       # preferences specified by commandline arguments (see run.py)
 resources = {}  # static resources located in the resource directory
 data = {}       # shielding, sources and scale factor
+
 from pyshield import constants as const
-from pyshield.log import log
+from pyshield.log import log, set_log_level
 import pyshield.excel.read as excel_import
 from pyshield.calculations import *
 import pyshield.run as run

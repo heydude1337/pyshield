@@ -9,7 +9,7 @@ from pyshield.calculations.line_intersect import intersect_line, angle_between_l
 import numpy as np
 import math
 
-from pyshield import const, prefs, data, log
+from pyshield import const, prefs, log
 
 def sum_shielding_line(source_location, location, shielding):
     """ Calculates the amount of shielding between two points source_location en location
