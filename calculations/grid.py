@@ -68,7 +68,8 @@ def make_grid(step_size = 1):
     yi = np.linspace(ymin + 0.5 * step_size, ymax - 0.5 * step_size, round((ymax-ymin)/step_size))
     
     x,y = np.meshgrid(xi, yi)
-  
+    x = x * data[const.SCALE] - prefs[const.ORIGIN][0]
+    y = y * data[const.SCALE] - prefs[const.ORIGIN][1]
     return (x,y)
 
 #def calc_dose_map(sources, shielding, xmin, xmax, ymin, ymax, step=1):  

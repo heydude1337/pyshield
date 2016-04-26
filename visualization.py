@@ -28,8 +28,8 @@ def show_floorplan():
   floor_plan = data[const.FLOOR_PLAN]
   shielding=data[const.SHIELDING]
   sources=data[const.SOURCES]
-  origin = prefs[const.ORIGIN]
-  scale = data[const.SCALE]
+  #origin = prefs[const.ORIGIN]
+  #scale = data[const.SCALE]
   if shielding is None: shielding = {}
   if sources is None: sources = {}
   
@@ -75,16 +75,17 @@ def show_floorplan():
       
   # show floor plan 
   fig=plt.figure()
-  plt.imshow(floor_plan, extent = get_extent())
+  plt.imshow(floor_plan, extent = get_extent(), origin = 'lower')
   # information text
   text_label = plt.text(0, 0 , 'Select Line')
   
   #plot shielding baririers  
-  
+ # print(scale)
   for name, barrier in shielding.items():
+     
      l=barrier[const.LOCATION]
-     l = (l[0] - origin[0], l[1] - origin[1], l[2] - origin[0], l[3] - origin[1])
-     l = [li*scale for li in l]
+     #l = (l[0] - origin[0], l[1] - origin[1], l[2] - origin[0], l[3] - origin[1])
+     #l = [li*scale for li in l]
      line, = plt.plot((l[0], l[2]), (l[1], l[3]), 'k-', 
                         linewidth=draw_thickness(barrier)/5, 
                         picker=draw_thickness(barrier)/5)
@@ -95,8 +96,8 @@ def show_floorplan():
   
   # plot red dot at source locations
   for name, source in sources.items():
-      point, = plt.plot(scale * (source[const.LOCATION][0] - origin[0]), 
-                        scale * (source[const.LOCATION][1] - origin[1]), 
+      point, = plt.plot(source[const.LOCATION][0] , 
+                        source[const.LOCATION][1] , 
                         'ro', picker = 5)
       point.name = name
   fig.canvas.mpl_connect('pick_event', object_click)
@@ -113,7 +114,8 @@ def plot_dose_map(floorplan, dose_map=None):
   fig=show_floorplan()
   
   # show heatmap
-  plt.imshow(dose_map, extent=get_extent(), 
+  plt.imshow(dose_map, extent=get_extent(),
+             origin = 'lower',
              alpha = 0.5,
              clim=clim,
              cmap=plt.get_cmap(colormap))
@@ -196,10 +198,15 @@ def get_extent():
   floorplan = data[const.FLOOR_PLAN]
   origin = prefs[const.ORIGIN]
   scale = data[const.SCALE]
-  extent = (0.5 - origin[0], floorplan.shape[1]-0.5 - origin[1], 
-            floorplan.shape[0]-0.5 - origin[0], 0.5 - origin[1])
-  extent = [e * scale for e in extent]    
-  return tuple(extent)
+  extent_pixels = (0.5 , floorplan.shape[1]-0.5, 
+                    0.5, floorplan.shape[0]-0.5)
+  extent_cm = (extent_pixels[0]*scale - origin[0],
+               extent_pixels[1]*scale - origin[0],
+               extent_pixels[2]*scale - origin[1],
+               extent_pixels[3]*scale - origin[1])
+              
+  return extent_cm
+  
 def save_figure(fig, source_name):
   """ save specifed figure to disk, file name gets a time stamp appended"""  
   

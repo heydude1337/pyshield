@@ -40,7 +40,7 @@ def equivalent_activity(source):
     
     if decay_corr:
       # calculate the number of desintegrations with decau correction
-      labda = data[const.ISOTOPES][isotope][const.LABDA]
+      labda = resources[const.ISOTOPES][isotope][const.LABDA]
       ndesintegrations = activity_bq * times_per_year * (1/labda - np.exp(-labda*duration_h*3600))
     else:
       # calculate the number of desintegrations without decay correction
@@ -62,14 +62,14 @@ def calc_dose_source_on_grid(source, grid):
   A_eff = equivalent_activity(source)  
   loc =source[const.LOCATION]
   
-  scale = data[const.SCALE]
+ 
 
   h10 = resources[const.ISOTOPES][isotope][const.H10]
   
   grid_size = grid[0].shape
   
   # distance gird
-  distance_r = np.sqrt((grid[0]-loc[0])**2 + (grid[1] - loc[1])**2) * scale / 100
+  distance_r = np.sqrt((grid[0]-loc[0])**2 + (grid[1] - loc[1])**2) / 100
   attenuation = np.zeros(grid_size)
   buildup = np.zeros(grid_size)
 
@@ -101,7 +101,7 @@ def calc_dose_source_at_location(source, location, shielding):
 
   source_location=source[const.LOCATION]
   isotope = source[const.ISOTOPE]
-  scale = data[const.SCALE]
+  
   ignore_buildup = prefs[const.IGNORE_BUILDUP]
   A_eff = equivalent_activity(source[const.DESINT], isotope)
   h10 = resources[const.ISOTOPES][isotope][const.H10]
@@ -110,7 +110,7 @@ def calc_dose_source_at_location(source, location, shielding):
   # obtain total shielding between source location and the given location
   sum_shielding=sum_shielding_line(source_location, location, shielding) 
  
-  d = np.linalg.norm(np.array(source_location) - (np.array(location))) / 100 * scale
+  d = np.linalg.norm(np.array(source_location) - (np.array(location))) / 100 
   
   # attenuation and buildup
   attenuation = sum_attenuation(sum_shielding, source)

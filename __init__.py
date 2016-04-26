@@ -33,7 +33,7 @@ __status__ = "Beta"
 __pkg_root__ = split(__file__)[0]
 
 prefs = {}       # preferences specified by commandline arguments (see run.py)
-resources = {}  # static resources located in the resource directory
+#resources = {}  # static resources located in the resource directory
 data = {}       # shielding, sources and scale factor
 
 from pyshield import constants as const
@@ -47,7 +47,7 @@ import pyshield.run as run
 #__all__ = ['log', 'run', 'visualization']
 
 from pyshield.errors import *
-
+from pyshield.resources import resources as resources
 #from pyshield.visualization import show, save, show_floorplan
 #import pyshield.run as run
 

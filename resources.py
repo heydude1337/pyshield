@@ -7,7 +7,7 @@ from os.path import join, splitext
 
 
 import matplotlib.image as mpimg
-
+import numpy as np
 
 def read_resources(files = None):    
   # read resource files either yaml or in excel format for buildup
@@ -34,7 +34,7 @@ def read_resource(file):
   elif ext in ('.xls', '.xlsx'):
     data=excel_import.read_excel_file(file)
   elif ext in ('.png', '.jpeg', '.jpg'):
-    data=mpimg.imread(file)
+    data=np.flipud(mpimg.imread(file))
   else:
     print(pyshield.ERR_FILE.format(file=file))
     raise
