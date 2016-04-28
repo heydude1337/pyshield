@@ -44,9 +44,9 @@ BUILDUP_FACTORS='Buildup Factors'
 #==============================================================================
 
 #required options
-SOURCES = 'sources'
-SHIELDING = 'shielding'
-FLOOR_PLAN = 'floorplan'
+SOURCES = 'source_file'
+SHIELDING = 'shielding_file'
+FLOOR_PLAN = 'floor_plan'
 
 #PREFERENCES = 'preferences'
 SCALE = 'scale'
@@ -57,7 +57,7 @@ PYTHAGORAS = 'pythagoras'
 
 CLIM_HEATMAP='clim_heatmap' 
 COLORMAP = 'colormap'
-IGNORE_BUILDUP = 'disable_buildup'
+DISABLE_BUILDUP = 'disable_buildup'
 MULTI_CPU = 'multiple_cpu'
 
 ISO_VALUES='iso_values'
@@ -125,7 +125,25 @@ MATERIAL = 'Material [cm]'
 
 
 
-  
 
+
+
+
+    
+
+    
+
+
+
+
+
+          
+                                 
+                                 
+                               
+                  
+                  
+                  
+              
 
 

@@ -196,7 +196,7 @@ def maximize_window():
     return
 def get_extent():
   floorplan = data[const.FLOOR_PLAN]
-  origin = prefs[const.ORIGIN]
+  origin = data[const.ORIGIN]
   scale = data[const.SCALE]
   extent_pixels = (0.5 , floorplan.shape[1]-0.5, 
                     0.5, floorplan.shape[0]-0.5)

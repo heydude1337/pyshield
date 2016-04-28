@@ -58,7 +58,7 @@ def calc_dose_source_on_grid(source, grid):
   shielding = data[const.SHIELDING]
   isotope   = source[const.ISOTOPE]
   # c
-  ignore_buildup = prefs[const.IGNORE_BUILDUP]  
+  ignore_buildup = prefs[const.DISABLE_BUILDUP]  
   A_eff = equivalent_activity(source)  
   loc =source[const.LOCATION]
   
@@ -217,7 +217,7 @@ def buildup(material, energy_keV, n_mfp_i):
   """
   
 
-  if n_mfp_i ==0: return 0
+  if n_mfp_i == 0: return 1
     
   n_mfp = resources[const.BUILDUP][material][const.MFP]
   energies = resources[const.BUILDUP][material][const.ENERGY]
