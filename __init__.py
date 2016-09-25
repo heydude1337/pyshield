@@ -1,28 +1,28 @@
 """
-  pyshield is an advanced program to calculate the (lead) shielding of a 
-  nuclear medicine facility. Shielding barriers can be specified in the 
+  pyshield is an advanced program to calculate the (lead) shielding of a
+  nuclear medicine facility. Shielding barriers can be specified in the
   shielding.yml file. Configuration options are specified in the config.yml
-  file. Radioactive source should be specified in the sources.yml file. 
+  file. Radioactive source should be specified in the sources.yml file.
   A floorplan image can be privided as floor_plan.png.
-  
+
   In the resources directory the following files are found:
   isotopes.yml:         Isotope data (half life, half value thickness etc.)
   materials.yml:        Materials data (density, composition etc.)
   buildup.xlsx:         Buidup factors for each material
-  archer_secondary.yml: Constants for CT calculation based on NCRP 147 
-  
-  
+  archer_secondary.yml: Constants for CT calculation based on NCRP 147
+
+
   use pyshield.run() to start the calculations
-  
+
   Matplotlib figures will be shown that show dose isocontour and a heatmap of
   the total (annual) dose on top of the floor_plan.
-  
-  Last Updated 05-02-2016
-  
-  """
-  
 
-from os.path import split 
+  Last Updated 05-02-2016
+
+  """
+
+
+from os.path import split
 __author__ = "Marcel Segbers"
 __copyright__ = "Copyright 2016, The pyshield Project"
 __license__ = "MIT"

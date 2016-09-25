@@ -18,11 +18,12 @@ CHOICES = 'choices'
 HELP_STRINGS = {
   const.SOURCES:        'Specify a yaml file containing the information of the present sources',
   const.SHIELDING:      'Specify a yaml file containing the information of the present shielding',
-  const.FLOOR_PLAN:      'Specify an image file of the floor plan for the calculation',
+  const.FLOOR_PLAN:     'Specify an image file of the floor plan for the calculation',
   const.SCALE:          'Specify the scale of the floorplan in cm/pixel',
   const.ORIGIN:         'Specify the origin in pixels: x,y (no space around the comma)',
   const.EXPORT_DIR:     'Specify a directory to which results (data and images) will be saved',
-  const.GRIDSIZE:      'Specify the distance between grid points in pixels',
+  const.GRIDSIZE:       'Specify the distance between grid points in pixels',
+  const.XY:             'Specify a yaml file with points for which the dos will be calculated',
   const.CLIM_HEATMAP:   'Specify the clim for the heatmap: low,high (notice no space)',
   const.COLORMAP :      'Specify the colormap (any valid matplotlib colormap name)',
   const.SHOW :          'Display the results of grid calculations in a nice figure. Show all sources seperately (all), show the summed dose (sum), or disable showing (none)',
@@ -30,7 +31,7 @@ HELP_STRINGS = {
   const.IMAGE_DPI :     'Specify the DPI for the saved images',
   const.SAVE_DATA :     'Save a (pickle) dump of the data to binary file',
   const.MULTI_CPU :     'Perform calculations on all availabel cpu cores. Disable to debug errors',
-  const.PYTHAGORAS :         'When enabled the effective thickness of the barrier is calculated taking into account the angle of intersection.',
+  const.PYTHAGORAS :    'When enabled the effective thickness of the barrier is calculated taking into account the angle of intersection.',
   const.ISO_VALUES :    'Isocontours for these dose values will be drawn. Number of values must match number of colors',
   const.ISO_COLORS :    'Colors for the isocontours. Number of colors must match number of values',
   const.DISABLE_BUILDUP :   'When True buildup will be disabled (testing purpuses)',
@@ -40,7 +41,7 @@ HELP_STRINGS = {
 # parse comma seperated values to a list (no spaces should be in the string)
 # 1.0,2,5,4.5 will be converted to [1.0, 2, 5, 4.5]
 str_float_list = lambda s: [float(item) for item in s.replace('"', "").split(',')]
-str_list = lambda s: [item for item in s.replace('"', "").split(',')]  
+str_list = lambda s: [item for item in s.replace('"', "").split(',')]
 
 COMMAND_LINE_ARGS = {
   const.SOURCES: {
@@ -67,6 +68,10 @@ COMMAND_LINE_ARGS = {
     PREFIX: ('grid_size',),
     DATA_TYPE: float,
     HELP_TEXT: HELP_STRINGS[const.GRIDSIZE]},
+  const.XY: {
+    PREFIX: ('xy',),
+    DATA_TYPE: str,
+    HELP_TEXT: HELP_STRINGS[const.XY]},
   const.CLIM_HEATMAP: {
     PREFIX: ('clim_heatmap',),
     DATA_TYPE: str_float_list,

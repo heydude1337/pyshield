@@ -8,52 +8,57 @@ Created on Thu Feb 18 00:27:58 2016
 import logging
 from pyshield import  __pkg_root__, const
 from os.path import join
-
+from ImageTools.app_logger import application_logger
 LOG_FILE = 'pyshield.log'
-LOG_TO_FILE = True
-LOG_TO_STDOUT = True
-LOG_LEVEL = logging.INFO
+#LOG_TO_FILE = True
+#LOG_TO_STDOUT = True
+#LOG_LEVEL = logging.DEBUG
 
 
-log =logging.getLogger('pyshield')
-
-def add_handlers(log):
-        
-   
-    formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
-    
-    #create file handler
-    fileHandler = logging.FileHandler(join(__pkg_root__,LOG_FILE), mode = 'w')
-    fileHandler.setFormatter(formatter)
-    
-    #create handler for text logging to console
-    stdoutHandler = logging.StreamHandler()
-    stdoutHandler.setFormatter(formatter)
-    
-    
-    # add handlers
-    if LOG_TO_STDOUT:
-      log.addHandler(stdoutHandler)
-    if LOG_TO_FILE:
-      log.addHandler(fileHandler)
-      
-    
-    log.setLevel(LOG_LEVEL)
-  
-
-    log.propagate = False # prevent logging to console
-    
-    return log
-    
-    
+#log =logging.getLogger('pyshield')
+log = application_logger('pyshield',
+                         fname = LOG_FILE,
+                         log_level = logging.DEBUG,
+                         log_to_console = True)
+#def add_handlers(log):
+#
+#
+#    formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
+#
+#    #create file handler
+#    fileHandler = logging.FileHandler(join(__pkg_root__,LOG_FILE), mode = 'w')
+#    fileHandler.setFormatter(formatter)
+#
+#    #create handler for text logging to console
+#    stdoutHandler = logging.StreamHandler()
+#    stdoutHandler.setFormatter(formatter)
+#
+#
+#    # add handlers
+#    if LOG_TO_STDOUT:
+#      log.addHandler(stdoutHandler)
+#    if LOG_TO_FILE:
+#      log.addHandler(fileHandler)
+#
+#
+#    log.setLevel(LOG_LEVEL)
+#
+#
+#    log.propagate = False # prevent logging to console
+#
+#    return log
+#
+#
 def set_log_level(loglevel_str):
   if loglevel_str == const.LOG_DEBUG:
-    log.setLevel(logging.DEBUG)
+    level = logging.DEBUG
   elif loglevel_str == const.LOG_INFO:
-    log.setLevel(logging.INFO)
+    level = logging.INFO
+  for handler in log.handlers:
+    handler.setLevel(level)
+#
+#
+#if log.handlers == []:
+#  add_handlers(log)
 
-
-if log.handlers == []:
-  add_handlers(log)
-        
 

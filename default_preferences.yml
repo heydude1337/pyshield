@@ -1,22 +1,42 @@
 pythagoras: True          # True or False
-grid_size: 100             # Distance between points of calculation in pixels
-clim_heatmap: '0,10'     # Limits for the colorscale of the heatmap in mSv
+#grid_size: 0              # Distance between points of calculation in pixels, 0 disables grid calculations
+#xy: ''                    # yaml file with locations of receiving points
+clim_heatmap:             # Limits for the colorscale of the heatmap in mSv
+  - 0
+  - 10
 colormap: afmhot          # Any valid colormap_name for pyplot
-disable_buildup: False     # Disable buildup calculations (for testing)
+disable_buildup: True     # if True buildup is set 1 for all calculations
+disable_buildup: False    # Disable buildup calculations (for testing)
+audit: False              # Gather lots of date for checking results
 multiple_cpu: False       # Divide workload over the available CPU cores
 show: 'All'               # Disable visualization (None), show summed (Sum) or all (All)
-save_images: True          # Save displayed figures as png
-image_dpi: 300            # 
+save_images: True         # Save displayed figures as png
+image_dpi: 300            #
 save_data: True           # Pickle dump of data
 scale: 1
-origin: '0,0'
-iso_values: '0.1,0.3,1,2.5,5,10'  # Isocontour values in mSv
-iso_colors: 'b,g,y,r,c,m' # Line colors, any valid pyplot color
+origin:
+  -0
+  -0
+iso_values:     # Isocontour values in mSv
+  - 0.1
+  - 0.3
+  - 1
+  - 2.5
+  - 5
+  - 10
+iso_colors:   # Line colors, any valid pyplot color
+  - 'b'
+  - 'g'
+  - 'y'
+  - 'r'
+  - 'c'
+  - 'm'
 export_dir: 'Example\'
-calculate: False       # set to false to only display the layout
-log: 'info'   # set to debug or info
-Export:   # Export settings, the shown plots will be exported as picture
+calculate: False                  # set to false to only display the layout
+log: 'info'                       # set to debug or info
+location_receiving_points:
+grid_size:
+Export:                           # Export settings, the shown plots will be exported as picture
   Export directory: 'Example/'
   File type: .png
   DPI: 300
-  

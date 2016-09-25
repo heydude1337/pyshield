@@ -2,10 +2,10 @@
 
     Last Updated 05-02-2016 """
 
-DEF_PREFERENCE_FILE = 'default_preferences.yml'
-RESOURCE_FILE = 'resources.yml'
+DEF_PREFERENCE_FILE =   'default_preferences.yml'
+RESOURCE_FILE =         'resources.yml'
 
-SUM_SOURCES = 'sum_sources'
+SUM_SOURCES =           'sum_sources'
 #FILE_TYPE = 'File type'
 
 
@@ -13,30 +13,30 @@ SUM_SOURCES = 'sum_sources'
 # Resources
 #==============================================================================
 
-MATERIALS = 'Materials'
-XRAY_SHIELDING = 'X-ray_shielding'
+MATERIALS =             'Materials'
+XRAY_SHIELDING =        'X-ray_shielding'
 
-ISOTOPES = 'Isotopes'
-BUILDUP = 'Buildup'
+ISOTOPES =              'Isotopes'
+BUILDUP =               'Buildup'
 
 #--------------------Materials file--------------------------------------------
-DENSITY = 'Density [g/cm^3]' 
+DENSITY =               'Density [g/cm^3]'
 #-----------------------------------------------------------------------------
 
 #---------------------Isotopes file-------------------------------------------
 #values
-H10 = 'h(10) [uSv/h per MBq/m^2]'
-HALFTIME = 'Half time [min]'
-LABDA = 'labda [s^-1]'
-HALF_VALUE_THICKNESS = 'Half value thickness [cm]'      
-#----------------------------------------------------------------------------- 
+H10 =                   'h(10) [uSv/h per MBq/m^2]'
+HALFTIME =              'Half time [min]'
+LABDA =                 'labda [s^-1]'
+HALF_VALUE_THICKNESS =  'Half value thickness [cm]'
+#-----------------------------------------------------------------------------
 
 #----------------------Buildup file-------------------------------------------
-MFP='Mean Free path'
-ENERGY='Energy [keV]'
-BUILDUP_FACTORS='Buildup Factors'
+MFP=                    'Mean Free path'
+ENERGY=                 'Energy [keV]'
+BUILDUP_FACTORS=        'Buildup Factors'
 #-----------------------------------------------------------------------------
- 
+
 
 
 #==============================================================================
@@ -44,39 +44,41 @@ BUILDUP_FACTORS='Buildup Factors'
 #==============================================================================
 
 #required options
-SOURCES = 'source_file'
-SHIELDING = 'shielding_file'
-FLOOR_PLAN = 'floor_plan'
+SOURCES =               'source_file'
+SHIELDING =             'shielding_file'
+FLOOR_PLAN =            'floor_plan'
 
 #PREFERENCES = 'preferences'
-SCALE = 'scale'
-ORIGIN = 'origin'
-EXPORT_DIR = 'export_dir'
-GRIDSIZE = 'grid_size'
-PYTHAGORAS = 'pythagoras'
+SCALE =                 'scale'
+ORIGIN =                'origin'
+EXPORT_DIR =            'export_dir'
+GRIDSIZE =              'grid_size'
+XY =                    'location_receiving_points'
+PYTHAGORAS =            'pythagoras'
 
-CLIM_HEATMAP='clim_heatmap' 
-COLORMAP = 'colormap'
-DISABLE_BUILDUP = 'disable_buildup'
-MULTI_CPU = 'multiple_cpu'
+CLIM_HEATMAP=           'clim_heatmap'
+COLORMAP =              'colormap'
+DISABLE_BUILDUP =       'disable_buildup'
+MULTI_CPU =             'multiple_cpu'
 
-ISO_VALUES='iso_values'
-ISO_COLORS='iso_colors'
+ISO_VALUES=             'iso_values'
+ISO_COLORS=             'iso_colors'
 
-SHOW = 'show'
-SAVE_DATA = 'save_data'
-SAVE_IMAGES = 'save_images'
-IMAGE_DPI = 'image_dpi'
+SHOW =                  'show'
+SAVE_DATA =             'save_data'
+SAVE_IMAGES =           'save_images'
+IMAGE_DPI =             'image_dpi'
 
-CALCULATE = 'calculate'
+CALCULATE =             'calculate'
 
-LOG = 'log'
-LOG_INFO = 'info'
-LOG_DEBUG = 'debug'
+LOG =                   'log'
+LOG_INFO =              'info'
+LOG_DEBUG =             'debug'
+AUDIT =                 'audit'
 #ISOCONTOURS = 'socontours'
 #values of isocontours
 #VALUES= 'Values'
-#COLORS = 'Colors' 
+#COLORS = 'Colors'
 
 
 
@@ -89,36 +91,49 @@ LOG_DEBUG = 'debug'
 #
 #
 #
-#EXPORT_RAW_FNAME =   'Pickle File' 
+#EXPORT_RAW_FNAME =   'Pickle File'
 #EXPORT_FIG_FNAME = 'Image File'
 ##data file keys
 #FILES = 'Files'
 #Values of FILES
 
 #----------------------Sources file-------------------------------------------
-ISOTOPE = 'Isotope'
-DESINT = 'N desintegrations [year^-1]' 
-ACTIVITY = 'Activity [MBq]'
-DURATION = 'Duration [h]'
-TIMES_PER_YEAR = 'Number of times per year'
-DECAY_CORRECTION = 'Decay correction'
-TYPE = 'Type'
-EXAM = 'Exam'
+ISOTOPE =             'Isotope'
+DESINT =              'N desintegrations [year^-1]'
+ACTIVITY =            'Activity [MBq]'
+DURATION =            'Duration [h]'
+TIMES_PER_YEAR =      'Number of times per year'
+DECAY_CORRECTION =    'Decay correction'
+TYPE =                'Type'
+EXAM =                'Exam'
 
-BODY = 'Body'
-HEAD = 'Head'
-KVP = 'kVp'
-DLP = 'Average DLP'
-NUMBER_EXAMS = 'Number of exams'
-XRAY_SECONDARY = 'X-ray secundary'
-NUMBER_OF_EXAMS = 'Number of exams'
+BODY =                'Body'
+HEAD =                'Head'
+KVP =                 'kVp'
+DLP =                 'Average DLP'
+NUMBER_EXAMS =        'Number of exams'
+XRAY_SECONDARY =      'X-ray secundary'
+NUMBER_OF_EXAMS =     'Number of exams'
 #-----------------------------------------------------------------------------
 
 #----------------------Shielding file-----------------------------------------
-LOCATION = 'Location [cm]'
-MATERIAL = 'Material [cm]'
+LOCATION =            'Location [cm]'
+LOCATION_PIXELS =     'Location [pixels]'
+MATERIAL =            'Material [cm]'
 #-----------------------------------------------------------------------------
-       
+
+
+#----------------------Audit keys  -------------------------------------------
+ASOURCE =                 'source name'
+ALOC_SOURCE =             'source location (pixels)'
+APOINT =                  'point name'
+ALOC_POINT =              'point location (pixels)'
+AEQUIVALENT_ACTIVITY =    'Equivalent activity [MBq/h]'
+ASHIELDING_MATERIALS_CM = 'Shielding materials'
+ADIST_PIX =               'Distance in pixels'
+ADIST_METERS =            'Distance in meters'
+ASCALE =                  'Scale Factor in cm/pixel'
+AATTENUATION =            'Total attenuation'
 
 
 
@@ -129,21 +144,20 @@ MATERIAL = 'Material [cm]'
 
 
 
-    
-
-    
 
 
 
 
 
-          
-                                 
-                                 
-                               
-                  
-                  
-                  
-              
+
+
+
+
+
+
+
+
+
+
 
 

@@ -1,1 +1,1 @@
-python run.py -src sources.yml -sh shielding.yml -f floor_plan.png -export_dir  ./result_example
+python run.py -src sources.yml -sh shielding.yml -f floor_plan.png -export_dir -grid_size 100  ./result_example
