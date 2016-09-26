@@ -11,6 +11,7 @@ from pyshield.resources import resources
 import numpy as np
 import scipy.interpolate as interp
 import pandas as pd
+from multiprocessing import Process
 #import pickle
 def equivalent_activity(source):
   # amount of activity can be either specified by number of desintegrations
@@ -104,13 +105,14 @@ def calc_dose_source_at_location(source, location, shielding, audit = None):
 
   source_location=source[const.LOCATION]
   isotope = source[const.ISOTOPE]
-  scale = data[const.SCALE]
+
 
   ignore_buildup = prefs[const.DISABLE_BUILDUP]
   A_eff = equivalent_activity(source)
   h10 = resources[const.ISOTOPES][isotope][const.H10]
   log.debug('Source location: '  + str(source_location))
   log.debug('Grid location: '  + str(location))
+
   # obtain total shielding between source location and the given location
   sum_shielding=sum_shielding_line(source_location, location, shielding)
 
@@ -129,17 +131,16 @@ def calc_dose_source_at_location(source, location, shielding, audit = None):
   dose_mSv = dose_uSv / 1000
 
   if prefs[const.AUDIT]:
-    audit[const.ALOC_SOURCE] = [source_location]
-    audit[const.ALOC_POINT] =  [location]
-    audit[const.DISABLE_BUILDUP] = [ignore_buildup]
-    audit[const.ISOTOPE] = [isotope]
-    audit[const.AEQUIVALENT_ACTIVITY] = [A_eff]
-    audit[const.H10] = [h10]
+    audit[const.ALOC_SOURCE] =             [source_location]
+    audit[const.ALOC_POINT] =              [location]
+    audit[const.DISABLE_BUILDUP] =         [ignore_buildup]
+    audit[const.ISOTOPE] =                 [isotope]
+    audit[const.AEQUIVALENT_ACTIVITY] =    [A_eff]
+    audit[const.H10] =                     [h10]
     audit[const.ASHIELDING_MATERIALS_CM] = [str(sum_shielding)]
-    audit[const.ADIST_METERS] = [d_meters]
-    audit[const.ASCALE] = [scale]
-    audit[const.BUILDUP] = [B]
-    audit[const.AATTENUATION] = [attenuation]
+    audit[const.ADIST_METERS] =            [d_meters]
+    audit[const.BUILDUP] =                 [B]
+    audit[const.AATTENUATION] =            [attenuation]
 
   return dose_mSv
 

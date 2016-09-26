@@ -18,7 +18,7 @@ LOG_FILE = 'pyshield.log'
 #log =logging.getLogger('pyshield')
 log = application_logger('pyshield',
                          fname = LOG_FILE,
-                         log_level = logging.DEBUG,
+                         log_level = logging.INFO,
                          log_to_console = True)
 #def add_handlers(log):
 #
