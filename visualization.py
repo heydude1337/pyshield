@@ -25,11 +25,16 @@ SHIELDING = 'Shielding'
 def show_floorplan():
 
   """ Show shielding barriers on top of floor plan. """
+
   log.debug('Loading floor_plan')
-  floor_plan = data[const.FLOOR_PLAN]
-  shielding=data[const.SHIELDING]
-  sources=data[const.SOURCES]
-  points = data[const.XY]
+  if const.FLOOR_PLAN in data.keys():
+    floor_plan = data[const.FLOOR_PLAN]
+  else:
+    log.warning('FLoor_plan not loaded!')
+
+  shielding=   data[const.SHIELDING]
+  sources=     data[const.SOURCES]
+  points =     data[const.XY]
   #origin = prefs[const.ORIGIN]
   #scale = data[const.SCALE]
   if shielding is None: shielding = {}
@@ -97,18 +102,23 @@ def show_floorplan():
   # enable mouse interaction
 
   # plot red dot at source locations
-  if sources:
-    for name, source in sources.items():
-        point, = plt.plot(source[const.LOCATION][0] ,
-                          source[const.LOCATION][1] ,
-                          'ro', picker = 5)
-        point.name = name
 
-  if points:
-    for name, point in points.items():
-      point, = plt.plot(*point, 'bo', picker = 5)
+  for name, source in sources.items():
+    log.debug('Plotting source {0}'.format(name))
+    plot_fcn = lambda xy: plt.plot(*xy, 'ro', picker = 5)
+    location = source[const.LOCATION]
+    if type(location[0]) in (tuple, list):
+      for loc in location:
+        p = plot_fcn(loc)
+        p[0].aname = name
+    else:
+      p = plot_fcn(location)
+      p[0].aname = name
 
-    fig.canvas.mpl_connect('pick_event', object_click)
+  for name, point in points.items():
+    point, = plt.plot(*point, 'bo', picker = 5)
+
+  fig.canvas.mpl_connect('pick_event', object_click)
   return fig
 
 

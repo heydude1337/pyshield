@@ -8,12 +8,12 @@ Created on Mon Mar 28 18:17:39 2016
 import argparse
 import pyshield
 from pyshield import data, prefs, const
-from pyshield.command_line import *
+import pyshield.command_line as cmdl
 from pyshield.visualization import show, show_floorplan
 from pyshield.resources import read_resource
 from pyshield import log, __pkg_root__, set_log_level
 from os.path import join
-from pyshield.calculations.grid import calc_dose_grid_source, sum_dose
+from pyshield.calculations.grid import calc_dose_grid_source, sum_dose, calc_dose_polar
 from pyshield.calculations.isotope import calc_dose_sources_at_locations
 
 import multiprocessing
@@ -22,18 +22,30 @@ from timeit import default_timer as timer
 
 NCORES = multiprocessing.cpu_count()
 
-def read_conf(conf):
+def read_prefs(prefs):
+  log.debug(prefs.keys())
   data_file_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
   for key in data_file_keys:
-    if key in conf.keys() and conf[key] is not None:
-      try:
-        conf[key] = read_resource(conf[key])
-      except:
-        print(pyshield.WARN_MISSING.format(missing = key))
-        raise KeyError
-  return conf
+    try:
+      log.debug('Reading {0}'.format(key))
+      prefs[key] = read_resource(prefs[key])
+    except:
+      log.exception('No valid or no input for {0}'.format(key))
+      prefs[key] = {}
 
-def set_conf(conf):
+#  if const.SHIELDING not in prefs.keys():
+#    log.warning('No shielding file found')
+#    prefs[const.SHIELDING] = {}
+#  if const.SOURCES not in prefs.keys():
+#    log.warning('Ńo sources file found')
+#    prefs[const.SOURCES] = {}
+#  if prefs[const.XY] not in prefs.keys():
+#    log.warning('No points file found')
+#    prefs[const.XY] = {}
+
+  return prefs
+
+def set_prefs(conf):
   data_keys = (const.XY, const.SCALE, const.ORIGIN,
                const.SOURCES, const.SHIELDING, const.FLOOR_PLAN)
 
@@ -51,32 +63,41 @@ def parse_args():
 
   prefix = {}
 
-  for name, arg in COMMAND_LINE_ARGS.items():
-    prefix[name] = arg.pop(PREFIX, None)
+  for name, arg in cmdl.COMMAND_LINE_ARGS.items():
+    prefix[name] = arg.pop(cmdl.PREFIX, None)
     prefix[name] = ['--' + p for p in prefix[name]]
 
-  for name, arg in COMMAND_LINE_ARGS.items():
+  for name, arg in cmdl.COMMAND_LINE_ARGS.items():
     parser.add_argument(*prefix[name], **arg)
   return vars(parser.parse_args())
 
 
 def run(**kwargs):
   # load default settings
-  conf = load_def_prefs()
+  log_str = 'Running with options: '
+  for key, value in kwargs.items():
+    log_str += '\n{0}: {1}'.format(key, value)
+  log.debug(log_str)
+  prefs = load_def_prefs()
 
   # update settings
   for key, value in kwargs.items():
-    conf[key] = value
+    prefs[key] = value
 
-  # read yaml files from disk and set pyshield conf accasible to whole package
-  set_conf(read_conf(conf))
-  set_log_level(conf[const.LOG])
+  # read yaml files from disk and set pyshield prefs accasible to whole package
+  set_prefs(read_prefs(prefs))
+  set_log_level(prefs[const.LOG])
 
   # do point calculations, grid calculations or just display based on settings
-  if conf[const.CALCULATE] and conf[const.XY] is not None:
+  if prefs[const.CALCULATE] and prefs[const.XY] != {}:
     dose = point_calculations()
-  elif conf[const.CALCULATE] and conf[const.GRIDSIZE] is not None:
+  elif prefs[const.CALCULATE] and prefs[const.GRID] is not None:
     dose = grid_calculations()
+
+  else:
+    #return (pyshield.data, pyshield.prefs)
+    show_floorplan()
+    dose = 0
   return dose
 
 
@@ -88,7 +109,7 @@ def point_calculations():
 
   shielding = data[const.SHIELDING]
 
-  worker = get_worker
+  worker = get_worker()
 
   dose = worker(calc_dose_sources_at_locations,
                 sources.values(),
@@ -115,15 +136,20 @@ def get_worker():
 def grid_calculations():
   sources = data[const.SOURCES]
 
-  if conf[const.CALCULATE] and conf[const.GRIDSIZE] is not None:
+  #if prefs[const.CALCULATE] and prefs[const.GRIDSIZE] is not None:
 
   log.info('\n-----Starting grid calculations-----\n')
+
+  if prefs[const.GRID] == const.CARTESIAN:
+    calc_func = calc_dose_grid_source
+  elif prefs[const.GRID] == const.POLAR:
+    calc_func = calc_dose_polar
 
   worker = get_worker()
 
   # do calculations
   start_time = timer()
-  dose_maps = tuple(worker(calc_dose_grid_source, tuple(sources.values())))
+  dose_maps = tuple(worker(calc_func, tuple(sources.values())))
   end_time = timer()
 
   log.info('It took {0} to complete the calculation'.format(end_time - start_time))
@@ -131,16 +157,14 @@ def grid_calculations():
   #format results
   dose_maps = dict(zip(tuple(sources.keys()), dose_maps))
   # sum over all dose_maps
-  dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
+  #dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
 
   log.info('\n-----Starting gird visualization-----\n')
-  figs = show(dose_maps)
+  #figs = show(dose_maps)
 
   return dose_maps
 
-  else:
-    #return (pyshield.data, pyshield.prefs)
-    show_floorplan()
+
   return data
 
 
@@ -149,9 +173,9 @@ def grid_calculations():
 if __name__ == '__main__':
   # start from commandlune with commandline arguments
   log.info('\n-----Commandline start-----\n')
-  conf = parse_args()
-  set_log_level(conf[const.LOG])
-  run(**conf)
+  prefs = parse_args()
+  set_log_level(prefs[const.LOG])
+  run(**prefs)
 
 
 

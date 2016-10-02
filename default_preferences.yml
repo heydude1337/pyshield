@@ -9,11 +9,12 @@ disable_buildup: True     # if True buildup is set 1 for all calculations
 disable_buildup: False    # Disable buildup calculations (for testing)
 audit: False              # Gather lots of date for checking results
 multiple_cpu: False       # Divide workload over the available CPU cores
-show: 'All'               # Disable visualization (None), show summed (Sum) or all (All)
+show: 'Sum'               # Disable visualization (None), show summed (Sum) or all (All)
 save_images: True         # Save displayed figures as png
 image_dpi: 300            #
 save_data: True           # Pickle dump of data
 scale: 1
+grid: cartesian           # cartesian or polar grid
 origin:
   -0
   -0
@@ -32,9 +33,9 @@ iso_colors:   # Line colors, any valid pyplot color
   - 'c'
   - 'm'
 export_dir: 'Example\'
-calculate: False                  # set to false to only display the layout
+calculate: True                  # set to false to only display the layout
 log: 'info'                       # set to debug or info
-location_receiving_points:
+#location_receiving_points:
 grid_size:
 Export:                           # Export settings, the shown plots will be exported as picture
   Export directory: 'Example/'

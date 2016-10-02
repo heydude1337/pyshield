@@ -14,7 +14,7 @@ LOG_FILE = 'pyshield.log'
 #LOG_TO_STDOUT = True
 #LOG_LEVEL = logging.DEBUG
 
-
+LOG_LEVEL = logging.DEBUG
 #log =logging.getLogger('pyshield')
 log = application_logger('pyshield',
                          fname = LOG_FILE,
@@ -54,8 +54,11 @@ def set_log_level(loglevel_str):
     level = logging.DEBUG
   elif loglevel_str == const.LOG_INFO:
     level = logging.INFO
+  else:
+    level = LOG_LEVEL
   for handler in log.handlers:
     handler.setLevel(level)
+  log.setLevel(level)
 #
 #
 #if log.handlers == []:
