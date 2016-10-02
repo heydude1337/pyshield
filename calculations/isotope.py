@@ -92,7 +92,9 @@ def calc_dose_source_on_grid(source, grid):
   dose_map = A_eff/(d_meters ** 2) * attenuation * buildup * h10 / 1000
 
   return dose_map
+  
 
+  
 def calc_dose_source_at_location(source, location, shielding, audit = None):
 
   """" Calculates the dose that will be measured in location given a source

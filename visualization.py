@@ -35,6 +35,10 @@ def show_floorplan():
   shielding=   data[const.SHIELDING]
   sources=     data[const.SOURCES]
   points =     data[const.XY]
+
+  if points is None:
+    points = {}
+
   #origin = prefs[const.ORIGIN]
   #scale = data[const.SCALE]
   if shielding is None: shielding = {}
@@ -155,30 +159,33 @@ def plot_dose_map(floorplan, dose_map=None):
 
 
 def show(dose_maps = None):
-  """ show a dictonary with dosemaps on top of the floor plan and
-      save to disk. """
-  figures={}
   log.debug('{0} dosem_maps loaded for visualization'.format(len(dose_maps)))
   log.debug('Showing {0} dose_maps'.format(prefs[const.SHOW]))
-  # show and save all figures it config property is set to show all
-  if dose_maps is not None:
-    if prefs[const.SHOW].lower() == 'all':
-      keys = list(dose_maps.keys())
-      keys.append(const.SUM_SOURCES)
-    elif prefs[const.SHOW].lower() == 'sum':
-      keys = (const.SUM_SOURCES,)
-  else:
+  
+  
+  
+  if dose_maps is None:
     show_floorplan()
-    return {}
-
-  # iterate over dosemaps
-  for key in keys:
-    log.debug('Preparing display for dose_map {0}'.format(key))
-    dmap = dose_maps[key]
-    figures[key] = plot_dose_map(data[const.FLOOR_PLAN], dmap)
-    figures[key].canvas.set_window_title(key)
-    plt.gca().set_title(key)
+    return 
+    
+  def plot(dose_map, title = ''):
+    figure= plot_dose_map(data[const.FLOOR_PLAN], dose_map)
+    figure.canvas.set_window_title(title)
+    plt.gca().set_title(title)
     maximize_window()
+    return figure
+  
+    """ show a dictonary with dosemaps on top of the floor plan and
+      save to disk. """
+  figures={}
+  # show and save all figures it config property is set to show all
+  if prefs[const.SHOW].lower() == 'all':
+    for key, dose_map in dose_maps.items():
+      figures[key] = plot(dose_map, title = key)
+  
+  if prefs[const.SHOW] in ('all', 'sum'):
+    plot(sum(dose_maps.values()), title = 'sum')
+  
   return figures
 
 def save(figures = None, dose_maps = None):

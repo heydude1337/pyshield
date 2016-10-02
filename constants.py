@@ -47,6 +47,7 @@ BUILDUP_FACTORS=        'Buildup Factors'
 SOURCES =               'source_file'
 SHIELDING =             'shielding_file'
 FLOOR_PLAN =            'floor_plan'
+XY =                    'location_receiving_points'
 
 #PREFERENCES = 'preferences'
 SCALE =                 'scale'
@@ -58,7 +59,7 @@ RMIN =                  'rmin'
 NANGLES =               'number_of_angles'
 CARTESIAN =             'cartesian'
 GRIDSIZE =              'grid_size'
-XY =                    'location_receiving_points'
+
 PYTHAGORAS =            'pythagoras'
 
 CLIM_HEATMAP=           'clim_heatmap'
@@ -80,27 +81,7 @@ LOG =                   'log'
 LOG_INFO =              'info'
 LOG_DEBUG =             'debug'
 AUDIT =                 'audit'
-#ISOCONTOURS = 'socontours'
-#values of isocontours
-#VALUES= 'Values'
-#COLORS = 'Colors'
 
-
-
-#Values of export/show
-
-#ALL_SOURCES = 'All sources'
-#SAVE = 'Save displayed figures'
-#
-##DPI = 'DPI'
-#
-#
-#
-#EXPORT_RAW_FNAME =   'Pickle File'
-#EXPORT_FIG_FNAME = 'Image File'
-##data file keys
-#FILES = 'Files'
-#Values of FILES
 
 #----------------------Sources file-------------------------------------------
 ISOTOPE =             'Isotope'

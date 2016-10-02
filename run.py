@@ -6,14 +6,13 @@ Created on Mon Mar 28 18:17:39 2016
 """
 
 import argparse
-import pyshield
 from pyshield import data, prefs, const
 import pyshield.command_line as cmdl
 from pyshield.visualization import show, show_floorplan
 from pyshield.resources import read_resource
 from pyshield import log, __pkg_root__, set_log_level
 from os.path import join
-from pyshield.calculations.grid import calc_dose_grid_source, sum_dose, calc_dose_polar
+from pyshield.calculations.grid import calculate_dose_map_for_source
 from pyshield.calculations.isotope import calc_dose_sources_at_locations
 
 import multiprocessing
@@ -33,16 +32,6 @@ def read_prefs(prefs):
       log.exception('No valid or no input for {0}'.format(key))
       prefs[key] = {}
 
-#  if const.SHIELDING not in prefs.keys():
-#    log.warning('No shielding file found')
-#    prefs[const.SHIELDING] = {}
-#  if const.SOURCES not in prefs.keys():
-#    log.warning('Ńo sources file found')
-#    prefs[const.SOURCES] = {}
-#  if prefs[const.XY] not in prefs.keys():
-#    log.warning('No points file found')
-#    prefs[const.XY] = {}
-
   return prefs
 
 def set_prefs(conf):
@@ -55,8 +44,7 @@ def set_prefs(conf):
   data.update(new_data)
   prefs.update(new_prefs)
 
-def load_def_prefs():
-  return read_resource(join(__pkg_root__, const.DEF_PREFERENCE_FILE))
+
 
 def parse_args():
   parser = argparse.ArgumentParser()
@@ -72,28 +60,39 @@ def parse_args():
   return vars(parser.parse_args())
 
 
-def run(**kwargs):
-  # load default settings
-  log_str = 'Running with options: '
-  for key, value in kwargs.items():
-    log_str += '\n{0}: {1}'.format(key, value)
-  log.debug(log_str)
-  prefs = load_def_prefs()
+def run_with_configuration(**kwargs):
 
   # update settings
   for key, value in kwargs.items():
     prefs[key] = value
-
+ 
+  
+  log_str = 'Running with options: '
+  pref_keys = sorted(prefs.keys())
+  for key in pref_keys:
+    log_str += '\n{0}: {1}'.format(key, prefs[key])
+  log.info(log_str)
+  
   # read yaml files from disk and set pyshield prefs accasible to whole package
-  set_prefs(read_prefs(prefs))
+  for key in prefs.keys():
+    if key in (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY):
+        try:
+          prefs[key] = read_resource(prefs[key])
+        except:
+          print('Cannot read file: {0} with {1} data'.format(prefs[key],
+                                                             key))
+          
+   
+  set_prefs(prefs)
   set_log_level(prefs[const.LOG])
 
   # do point calculations, grid calculations or just display based on settings
-  if prefs[const.CALCULATE] and prefs[const.XY] != {}:
-    dose = point_calculations()
-  elif prefs[const.CALCULATE] and prefs[const.GRID] is not None:
+ 
+  if prefs[const.CALCULATE] and prefs[const.GRID] is not None:
     dose = grid_calculations()
-
+    show(dose)
+  elif prefs[const.CALCULATE] and prefs[const.XY] != {}:
+    dose = point_calculations()
   else:
     #return (pyshield.data, pyshield.prefs)
     show_floorplan()
@@ -129,8 +128,10 @@ def get_worker():
     pool = multiprocessing.Pool(NCORES)
     worker = pool.map
     log.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
+    log.debug('Multi core calculations')
   else:
     worker = map
+    log.debug('Single core calculations')
   return worker
 
 def grid_calculations():
@@ -140,16 +141,13 @@ def grid_calculations():
 
   log.info('\n-----Starting grid calculations-----\n')
 
-  if prefs[const.GRID] == const.CARTESIAN:
-    calc_func = calc_dose_grid_source
-  elif prefs[const.GRID] == const.POLAR:
-    calc_func = calc_dose_polar
 
   worker = get_worker()
-
+ 
   # do calculations
   start_time = timer()
-  dose_maps = tuple(worker(calc_func, tuple(sources.values())))
+  dose_maps = tuple(worker(calculate_dose_map_for_source,
+                           tuple(sources.values())))
   end_time = timer()
 
   log.info('It took {0} to complete the calculation'.format(end_time - start_time))
@@ -165,17 +163,15 @@ def grid_calculations():
   return dose_maps
 
 
-  return data
-
 
 
 
 if __name__ == '__main__':
   # start from commandlune with commandline arguments
   log.info('\n-----Commandline start-----\n')
-  prefs = parse_args()
+  #prefs = parse_args()
   set_log_level(prefs[const.LOG])
-  run(**prefs)
+  #run(**prefs)
 
 
 

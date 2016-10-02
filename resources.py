@@ -25,8 +25,10 @@ def read_resources(files = None):
   return data
 
 def read_resource(file):
+
   log.debug('Loading: '  + file)
   ext = splitext(file)[1].lower()
+   
   if ext in ('.yml','.yaml'):
     log.debug('reading yaml')
     data=yaml_wrap.read_yaml(file)
