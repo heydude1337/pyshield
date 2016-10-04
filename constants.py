@@ -89,6 +89,7 @@ DESINT =              'N desintegrations [year^-1]'
 ACTIVITY =            'Activity [MBq]'
 DURATION =            'Duration [h]'
 TIMES_PER_YEAR =      'Number of times per year'
+ACTIVITY_H =          'Equivalent Activity MBq/h'
 DECAY_CORRECTION =    'Decay correction'
 TYPE =                'Type'
 EXAM =                'Exam'
@@ -111,16 +112,14 @@ MATERIAL =            'Material [cm]'
 
 #----------------------Audit keys  -------------------------------------------
 ASOURCE =                 'source name'
-ALOC_SOURCE =             'source location (pixels)'
+ALOC_SOURCE =             'source location [cm]'
 APOINT =                  'point name'
-ALOC_POINT =              'point location (pixels)'
-AEQUIVALENT_ACTIVITY =    'Equivalent activity [MBq/h]'
+ALOC_POINT =              'point location [cm]'
 ASHIELDING_MATERIALS_CM = 'Shielding materials'
-ADIST_PIX =               'Distance in pixels'
 ADIST_METERS =            'Distance in meters'
 ASCALE =                  'Scale Factor in cm/pixel'
 AATTENUATION =            'Total attenuation'
-
+DOSE_MSV =                'Dose [mSv]'
 
 
 

@@ -21,31 +21,122 @@ from timeit import default_timer as timer
 
 NCORES = multiprocessing.cpu_count()
 
-def read_prefs(prefs):
-  log.debug(prefs.keys())
-  data_file_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
-  for key in data_file_keys:
+
+def run_with_configuration(**kwargs):
+  # update settings
+  for key, value in kwargs.items():
+    if key in (const.ORIGIN, const.SCALE):
+        data[key] = value
+    else:
+        prefs[key] = value
+
+  log_str = 'Running with configuration: '
+  pref_keys = sorted(prefs.keys())
+  for key in pref_keys:
+    log_str += '\n{0}:\t\t\t\t\t {1}'.format(key, prefs[key])
+  log.info(log_str)
+
+  # read yaml files from disk and set pyshield prefs accasible to whole package
+  data_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
+  for key in data_keys:
     try:
-      log.debug('Reading {0}'.format(key))
-      prefs[key] = read_resource(prefs[key])
+      data[key] = read_resource(prefs[key])
     except:
-      log.exception('No valid or no input for {0}'.format(key))
-      prefs[key] = {}
+      data[key] = {}
+      print('Cannot read file for {0} data'.format(key))
+   
+  set_log_level(prefs[const.LOG])
 
-  return prefs
+  # do point calculations, grid calculations or just display based on settings
+  
+  if prefs[const.CALCULATE] == const.GRID:
+    result = grid_calculations()
+    show(result)
+  elif prefs[const.CALCULATE] == const.XY:
+    result = point_calculations()
+  else:
+    #return (pyshield.data, pyshield.prefs)
+    show_floorplan()
+    result = None
+  return result
 
-def set_prefs(conf):
-  data_keys = (const.XY, const.SCALE, const.ORIGIN,
-               const.SOURCES, const.SHIELDING, const.FLOOR_PLAN)
+def point_calculations():
+  log.info('\n-----Starting point calculations-----\n')
 
-  new_data = dict([(k, v) for k,v in conf.items() if k in data_keys])
-  new_prefs = dict([(k, v) for k, v in conf.items() if k not in data_keys])
+  locations = data[const.XY]
+  log.debug('Locations: {0}'.format(locations))
 
-  data.update(new_data)
-  prefs.update(new_prefs)
+  sources= data[const.SOURCES]
+
+  shielding = data[const.SHIELDING]
 
 
+  calc_func = lambda sources: calc_dose_sources_at_locations(sources,
+                                                             locations,
+                                                             shielding)
+  
+  result = calc_func(sources)
+  
+  if prefs[const.AUDIT]:
+    result[const.DOSE_MSV] = result[const.AATTENUATION] * \
+                             result[const.BUILDUP] *      \
+                             result[const.ACTIVITY_H] *   \
+                             result[const.H10]/1000 /     \
+                             (result[const.ADIST_METERS]**2)
+  log.info('\n-----Point calculations finished-----\n')
+  return result
 
+def grid_calculations():
+  
+  sources = data[const.SOURCES]
+
+  
+
+  log.info('\n-----Starting grid calculations-----\n')
+
+
+  worker = get_worker()
+
+  # do calculations
+  start_time = timer()
+  snames  = tuple(sources.keys())
+  sources = tuple(sources.values())
+
+
+  results = tuple(worker(calculate_dose_map_for_source, sources))
+
+  end_time = timer()
+
+  log.info('It took {0} to complete the calculation'.format(end_time - start_time))
+
+  #format results
+  results = dict(zip(snames, results))
+  # sum over all dose_maps
+  #dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
+
+  log.info('\n-----Starting gird visualization-----\n')
+  #figs = show(dose_maps)
+
+  return results
+
+def get_worker():
+  # select single core or multi core processing
+  if prefs[const.MULTI_CPU]:
+    if not(os.name == 'posix'):
+      print('Cannot use multi processing on non posix os (Windows)')
+      raise multiprocessing.ProcessError
+
+    pool = multiprocessing.Pool(NCORES)
+    worker = pool.map
+    log.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
+    log.info('Multi core calculations')
+  else:
+    worker = map
+    log.info('Single core calculations')
+  return worker
+  
+  
+  
 def parse_args():
   parser = argparse.ArgumentParser()
 
@@ -60,107 +151,11 @@ def parse_args():
   return vars(parser.parse_args())
 
 
-def run_with_configuration(**kwargs):
-
-  # update settings
-  for key, value in kwargs.items():
-    prefs[key] = value
- 
-  
-  log_str = 'Running with options: '
-  pref_keys = sorted(prefs.keys())
-  for key in pref_keys:
-    log_str += '\n{0}: {1}'.format(key, prefs[key])
-  log.info(log_str)
-  
-  # read yaml files from disk and set pyshield prefs accasible to whole package
-  for key in prefs.keys():
-    if key in (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY):
-        try:
-          prefs[key] = read_resource(prefs[key])
-        except:
-          print('Cannot read file: {0} with {1} data'.format(prefs[key],
-                                                             key))
-          
-   
-  set_prefs(prefs)
-  set_log_level(prefs[const.LOG])
-
-  # do point calculations, grid calculations or just display based on settings
- 
-  if prefs[const.CALCULATE] and prefs[const.GRID] is not None:
-    dose = grid_calculations()
-    show(dose)
-  elif prefs[const.CALCULATE] and prefs[const.XY] != {}:
-    dose = point_calculations()
-  else:
-    #return (pyshield.data, pyshield.prefs)
-    show_floorplan()
-    dose = 0
-  return dose
 
 
-def point_calculations():
-  log.info('\n-----Starting point calculations-----\n')
-
-  locations = data[const.XY]
-  sources= data[const.SOURCES]
-
-  shielding = data[const.SHIELDING]
-
-  worker = get_worker()
-
-  dose = worker(calc_dose_sources_at_locations,
-                sources.values(),
-                locations,
-                shielding)
-
-  log.info('\n-----Point calculations finished-----\n')
-  return dose
-
-def get_worker():
-  # select single core or multi core processing
-  if prefs[const.MULTI_CPU]:
-    if not(os.name == 'posix'):
-      print('Cannot use multi processing on non posix os (Windows)')
-      raise multiprocessing.ProcessError
-
-    pool = multiprocessing.Pool(NCORES)
-    worker = pool.map
-    log.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
-    log.debug('Multi core calculations')
-  else:
-    worker = map
-    log.debug('Single core calculations')
-  return worker
-
-def grid_calculations():
-  sources = data[const.SOURCES]
-
-  #if prefs[const.CALCULATE] and prefs[const.GRIDSIZE] is not None:
-
-  log.info('\n-----Starting grid calculations-----\n')
 
 
-  worker = get_worker()
- 
-  # do calculations
-  start_time = timer()
-  dose_maps = tuple(worker(calculate_dose_map_for_source,
-                           tuple(sources.values())))
-  end_time = timer()
 
-  log.info('It took {0} to complete the calculation'.format(end_time - start_time))
-
-  #format results
-  dose_maps = dict(zip(tuple(sources.keys()), dose_maps))
-  # sum over all dose_maps
-  #dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
-
-  log.info('\n-----Starting gird visualization-----\n')
-  #figs = show(dose_maps)
-
-  return dose_maps
 
 
 

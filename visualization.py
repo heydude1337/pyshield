@@ -21,6 +21,17 @@ import numpy as np
 
 SOURCE = 'Source'
 SHIELDING = 'Shielding'
+SHOW_POINTS = False
+
+# Visualisation options
+WALL_COLOR            = 'b'
+WALL_LINE_STYLE       = '-'
+WALL_THICKNESS_SCALE  = 0.3
+SOURCE_COLOR          = 'r'
+SOURCE_SHAPE          = 'o'
+LEGEND_LOCATION       = 4
+POINT_COLOR           = 'b'
+POINT_SHAPE           = 'o'
 
 def show_floorplan():
 
@@ -30,7 +41,7 @@ def show_floorplan():
   if const.FLOOR_PLAN in data.keys():
     floor_plan = data[const.FLOOR_PLAN]
   else:
-    log.warning('FLoor_plan not loaded!')
+    log.warning('fLoor_plan not loaded!')
 
   shielding=   data[const.SHIELDING]
   sources=     data[const.SOURCES]
@@ -41,8 +52,8 @@ def show_floorplan():
 
   #origin = prefs[const.ORIGIN]
   #scale = data[const.SCALE]
-  if shielding is None: shielding = {}
-  if sources is None:   sources = {}
+#  if shielding is None: shielding = {}
+#  if sources is None:   sources = {}
 
   def shielding_click(name):
     text = name + ':'
@@ -93,15 +104,18 @@ def show_floorplan():
   #plot shielding baririers
  # print(scale)
   for name, barrier in shielding.items():
+    log.debug('deawing {0}'.format(name))
+    l=barrier[const.LOCATION]
+    
+    linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE 
+    
+    line, = plt.plot((l[0], l[2]), (l[1], l[3]), 
+                      color     = WALL_COLOR,
+                      linestyle = WALL_LINE_STYLE,
+                      linewidth = linewidth,
+                      picker    = linewidth)
 
-     l=barrier[const.LOCATION]
-     #l = (l[0] - origin[0], l[1] - origin[1], l[2] - origin[0], l[3] - origin[1])
-     #l = [li*scale for li in l]
-     line, = plt.plot((l[0], l[2]), (l[1], l[3]), 'k-',
-                        linewidth=draw_thickness(barrier)/5,
-                        picker=draw_thickness(barrier)/5)
-
-     line.name = name
+    line.name = name
 
   # enable mouse interaction
 
@@ -109,7 +123,11 @@ def show_floorplan():
 
   for name, source in sources.items():
     log.debug('Plotting source {0}'.format(name))
-    plot_fcn = lambda xy: plt.plot(*xy, 'ro', picker = 5)
+    plot_fcn = lambda xy: plt.plot(*xy, 
+                                   color = SOURCE_COLOR,
+                                   marker = SOURCE_SHAPE,
+                                   picker = 5)
+    
     location = source[const.LOCATION]
     if type(location[0]) in (tuple, list):
       for loc in location:
@@ -118,9 +136,13 @@ def show_floorplan():
     else:
       p = plot_fcn(location)
       p[0].aname = name
-
+  
+  
   for name, point in points.items():
-    point, = plt.plot(*point, 'bo', picker = 5)
+    point, = plt.plot(*point, 
+                      color =  POINT_COLOR,
+                      marker = POINT_SHAPE,
+                      picker = 5)
 
   fig.canvas.mpl_connect('pick_event', object_click)
   return fig
@@ -154,37 +176,47 @@ def plot_dose_map(floorplan, dose_map=None):
   plt.clabel(C, inline=1, fontsize=10)
 
   # show legend for isocontours
-  plt.legend(C.collections, [str(value) + ' mSv' for value in prefs[const.ISO_VALUES]])
+  legend_labels = [str(value) + ' mSv' for value in prefs[const.ISO_VALUES]]
+  plt.legend(C.collections, legend_labels, loc = LEGEND_LOCATION )
   return fig
 
 
-def show(dose_maps = None):
-  log.debug('{0} dosem_maps loaded for visualization'.format(len(dose_maps)))
+def show(results = None):
+  
+  log.debug('{0} dosem_maps loaded for visualization'.format(len(results)))
   log.debug('Showing {0} dose_maps'.format(prefs[const.SHOW]))
   
   
   
-  if dose_maps is None:
+  if results is None:
     show_floorplan()
     return 
     
-  def plot(dose_map, title = ''):
+  def plot(dose_map, p = None, title = ''):
     figure= plot_dose_map(data[const.FLOOR_PLAN], dose_map)
+    
     figure.canvas.set_window_title(title)
     plt.gca().set_title(title)
     maximize_window()
-    return figure
+    if SHOW_POINTS:
+        for pi in p:
+            plt.plot(*pi,'go')
+    return #figure
   
     """ show a dictonary with dosemaps on top of the floor plan and
       save to disk. """
   figures={}
   # show and save all figures it config property is set to show all
   if prefs[const.SHOW].lower() == 'all':
-    for key, dose_map in dose_maps.items():
-      figures[key] = plot(dose_map, title = key)
+    for key, result in results.items():
+      points, grid, dose_map = result
+      figures[key] = plot(dose_map, points = points, title = key)
   
   if prefs[const.SHOW] in ('all', 'sum'):
-    plot(sum(dose_maps.values()), title = 'sum')
+      sum_dose_maps = sum([result[2] for result in results.values()])
+      points = np.concatenate([result[0] for result in results.values()])
+      log.info(str(points.shape))
+      plot(sum_dose_maps, p = points, title = 'sum')
   
   return figures
 
@@ -214,7 +246,7 @@ def maximize_window():
     mng = plt.get_current_fig_manager()
 
     # Maximization depends on matplotlib backend
-    if backend == 'Qt4Agg':
+    if backend in ( 'Qt4Agg', 'Qt5Agg'):
       mng.window.showMaximized()
     elif backend == 'wxAgg':
       mng.frame.Maximize(True)
@@ -253,7 +285,19 @@ def save_figure(fig, source_name):
   log.debug('Writing: ' + fname)
   fig.savefig(fname, dpi=dpi, bbox_inches='tight')
 
-
+def cursor(fig = None, npoints = 2, name = ''):
+    if fig is None:
+        fig = plt.gcf()
+    p = fig.ginput(npoints)
+    p = np.round(p)
+    entry = '{name}:\n  Location [cm]:\n    - {x1}\n    - {y1}\n    - {x2}\n    - {y2}'
+    print(entry.format(name = name, 
+                 x1 = p[0,0],
+                 y1 = p[0,1],
+                 x2 = p[1,0],
+                 y2 = p[1,1]))
+    
+    return p
 
 
 

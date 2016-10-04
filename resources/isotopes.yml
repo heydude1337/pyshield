@@ -65,4 +65,16 @@ Lu-177:
   labda [s^-1]: 1.2e-6
   Energy [keV]: 113
   Half value thickness [cm]:
-    Lead: 0.06
+    Lead: 0.08
+    Tungsten: 0.06
+    Concrete [2.4g/cm^3]: 9.89
+    Stone [1.5g/cm^3]: 15.824    
+I-131:
+  h(10) [uSv/h per MBq/m^2]:  0.066
+  labda [s^-1]: 1.0e-6
+  Energy [keV]: 365
+  Half value thickness [cm]:
+    Lead: 0.39
+    Concrete [2.4g/cm^3]: 11.8
+    Stone [1.5g/cm^3]:  18.88
+

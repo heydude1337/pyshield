@@ -11,7 +11,7 @@ from pyshield.resources import resources
 import numpy as np
 import scipy.interpolate as interp
 import pandas as pd
-from multiprocessing import Process
+
 #import pickle
 def equivalent_activity(source):
   # amount of activity can be either specified by number of desintegrations
@@ -47,7 +47,8 @@ def equivalent_activity(source):
     else:
       # calculate the number of desintegrations without decay correction
       ndesintegrations = activity_bq * times_per_year * duration_h * 3600
-
+  elif const.ACTIVITY_H in source.keys():
+    ndesintegrations = source[const.ACTIVITY_H] * 3600 * 1E6
   # The equivalent activity is the amount of MBq of the isotope that would be
   # needed to give the amount of desintegrations in one hour without decay corrections
 
@@ -137,7 +138,7 @@ def calc_dose_source_at_location(source, location, shielding, audit = None):
     audit[const.ALOC_POINT] =              [location]
     audit[const.DISABLE_BUILDUP] =         [ignore_buildup]
     audit[const.ISOTOPE] =                 [isotope]
-    audit[const.AEQUIVALENT_ACTIVITY] =    [A_eff]
+    audit[const.ACTIVITY_H] =              [A_eff]
     audit[const.H10] =                     [h10]
     audit[const.ASHIELDING_MATERIALS_CM] = [str(sum_shielding)]
     audit[const.ADIST_METERS] =            [d_meters]
@@ -147,7 +148,7 @@ def calc_dose_source_at_location(source, location, shielding, audit = None):
   return dose_mSv
 
 def calc_dose_sources_at_locations(sources, locations, shielding, audit = None):
-
+  print(locations)
   dose_mSv = {}
   if prefs[const.AUDIT] and audit is None:
     audit = pd.DataFrame()
@@ -164,8 +165,11 @@ def calc_dose_sources_at_locations(sources, locations, shielding, audit = None):
         audit_entry = None
 
       log.debug('Calculating source {0} for point {0}'.format(sname, pname))
-      di += calc_dose_source_at_location(source, loc, shielding, audit = audit_entry)
-      audit = pd.concat((audit, audit_entry), ignore_index = True)
+      di += calc_dose_source_at_location(source, loc,
+                                         shielding, 
+                                         audit = audit_entry)
+      if prefs[const.AUDIT]:
+        audit = pd.concat((audit, audit_entry), ignore_index = True)
     dose_mSv[pname] = di
 
   if  prefs[const.AUDIT]:

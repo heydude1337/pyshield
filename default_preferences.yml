@@ -13,12 +13,9 @@ show: 'sum'               # Disable visualization (None), show summed (Sum) or a
 save_images: True         # Save displayed figures as png
 image_dpi: 300            #
 save_data: True           # Pickle dump of data
-scale: 1
 grid: cartesian           # cartesian or polar grid
 grid_size: 100
-origin:
-  - 0
-  - 0
+number_of_angles: 36
 iso_values:     # Isocontour values in mSv
   - 0.1
   - 0.3
@@ -36,7 +33,6 @@ iso_colors:   # Line colors, any valid pyplot color
 export_dir: 'Example\'
 calculate: True                  # set to false to only display the layout
 log: 'info'                       # set to debug or info
-location_receiving_points:
 grid_size:
 Export:                           # Export settings, the shown plots will be exported as picture
   Export directory: 'Example/'
