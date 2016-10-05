@@ -14,7 +14,7 @@ from pyshield import log, __pkg_root__, set_log_level
 from os.path import join
 from pyshield.calculations.grid import calculate_dose_map_for_source
 from pyshield.calculations.isotope import calc_dose_sources_at_locations
-
+import numpy as np
 import multiprocessing
 import os
 from timeit import default_timer as timer
@@ -40,7 +40,14 @@ def run_with_configuration(**kwargs):
   data_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
   for key in data_keys:
     try:
-      data[key] = read_resource(prefs[key])
+      if key in prefs.keys():
+          data[key] = read_resource(prefs[key])
+      else:
+        # empty image with size area if no image is defined
+        if key == const.FLOOR_PLAN:
+          if const.AREA in prefs.keys():              
+              data[key] = np.zeros(const.AREA)
+              prefs[const.SCALE] = 1 
     except:
       data[key] = {}
       print('Cannot read file for {0} data'.format(key))
@@ -48,7 +55,6 @@ def run_with_configuration(**kwargs):
   set_log_level(prefs[const.LOG])
 
   # do point calculations, grid calculations or just display based on settings
-  
   if prefs[const.CALCULATE] == const.GRID:
     result = grid_calculations()
     show(result)
@@ -77,6 +83,7 @@ def point_calculations():
   
   result = calc_func(sources)
   
+  # calculate dose for each source seperately excel like
   if prefs[const.AUDIT]:
     result[const.DOSE_MSV] = result[const.AATTENUATION] * \
                              result[const.BUILDUP] *      \
@@ -90,7 +97,6 @@ def grid_calculations():
   
   sources = data[const.SOURCES]
 
-  
 
   log.info('\n-----Starting grid calculations-----\n')
 
@@ -111,11 +117,9 @@ def grid_calculations():
 
   #format results
   results = dict(zip(snames, results))
-  # sum over all dose_maps
-  #dose_maps[const.SUM_SOURCES] = sum_dose(dose_maps)
 
   log.info('\n-----Starting gird visualization-----\n')
-  #figs = show(dose_maps)
+ 
 
   return results
 
@@ -136,7 +140,6 @@ def get_worker():
   return worker
   
   
-  
 def parse_args():
   parser = argparse.ArgumentParser()
 
@@ -149,16 +152,6 @@ def parse_args():
   for name, arg in cmdl.COMMAND_LINE_ARGS.items():
     parser.add_argument(*prefix[name], **arg)
   return vars(parser.parse_args())
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

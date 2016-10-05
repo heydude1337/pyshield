@@ -50,6 +50,7 @@ FLOOR_PLAN =            'floor_plan'
 XY =                    'location_receiving_points'
 
 #PREFERENCES = 'preferences'
+AREA =                  'area'
 SCALE =                 'scale'
 ORIGIN =                'origin'
 EXPORT_DIR =            'export_dir'
