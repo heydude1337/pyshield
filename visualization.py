@@ -43,9 +43,18 @@ def show_floorplan():
   else:
     log.warning('fLoor_plan not loaded!')
 
-  shielding=   data[const.SHIELDING]
-  sources=     data[const.SOURCES]
-  points =     data[const.XY]
+  try:
+    shielding=   data[const.SHIELDING]
+  except:
+    shielding = {}
+  try:
+    sources=     data[const.SOURCES]
+  except:
+    sources = {}
+  try:
+    points =     data[const.XY]
+  except:
+    points = {}
 
   if points is None:
     points = {}
