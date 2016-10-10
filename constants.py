@@ -108,6 +108,7 @@ NUMBER_OF_EXAMS =     'Number of exams'
 LOCATION =            'Location [cm]'
 LOCATION_PIXELS =     'Location [pixels]'
 MATERIAL =            'Material [cm]'
+COLOR =               'Color'
 #-----------------------------------------------------------------------------
 
 

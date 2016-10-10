@@ -118,8 +118,13 @@ def show_floorplan():
     
     linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE 
     
+    if const.COLOR in barrier.keys():
+      color = barrier[const.COLOR]
+    else:
+      color = WALL_COLOR
+
     line, = plt.plot((l[0], l[2]), (l[1], l[3]), 
-                      color     = WALL_COLOR,
+                      color     = color,
                       linestyle = WALL_LINE_STYLE,
                       linewidth = linewidth,
                       picker    = linewidth)

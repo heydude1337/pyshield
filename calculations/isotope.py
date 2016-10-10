@@ -271,17 +271,17 @@ def buildup(material, energy_keV, n_mfp_i):
 
   if n_mfp_i == 0: return 1
 
-  n_mfp = resources[const.BUILDUP][material][const.MFP]
-  energies = resources[const.BUILDUP][material][const.ENERGY]
-  factors = resources[const.BUILDUP][material][const.BUILDUP_FACTORS]
-  energy_meV = energy_keV/1000
+  n_mfp       = resources[const.BUILDUP][material][const.MFP]
+  energies    = resources[const.BUILDUP][material][const.ENERGY]
+  factors     = resources[const.BUILDUP][material][const.BUILDUP_FACTORS]
+  energy_meV  = energy_keV/1000
 
-  interp_func= interp.interp2d(n_mfp,energies,  factors, kind = 'linear')
+  interp_func= interp.interp2d(n_mfp, energies,  factors, kind = 'linear')
   factor = interp_func(n_mfp_i, energy_meV)
 
   log.debug('Buildup factor:  ' + str(factor))
-  log.debug('MFP: '  + str(n_mfp_i))
-  log.debug('Energy: ' + str(energy_meV))
+  log.debug('MFP: '             + str(n_mfp_i))
+  log.debug('Energy: '          + str(energy_meV))
 
   return np.squeeze(factor)
 
