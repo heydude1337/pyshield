@@ -11,7 +11,7 @@ from pyshield.resources import resources
 import numpy as np
 import scipy.interpolate as interp
 import pandas as pd
-
+from pyshield.calculations.dose_rates import H10
 #import pickle
 def equivalent_activity(source):
   # amount of activity can be either specified by number of desintegrations
@@ -56,43 +56,44 @@ def equivalent_activity(source):
   eq_activity = ndesintegrations/3600/1E6
   return eq_activity
 
-def calc_dose_source_on_grid(source, grid):
-  # data
-  shielding = data[const.SHIELDING]
-  isotope   = source[const.ISOTOPE]
-  # c
-  ignore_buildup = prefs[const.DISABLE_BUILDUP]
-  A_eff = equivalent_activity(source)
-  loc =source[const.LOCATION]
-
-
-
-  h10 = resources[const.ISOTOPES][isotope][const.H10]
-
-  grid_size = grid[0].shape
-
-  # distance gird
-  d_meters = np.sqrt((grid[0]-loc[0])**2 + (grid[1] - loc[1])**2) / 100
-
-
-  attenuation = np.zeros(grid_size)
-  buildup = np.zeros(grid_size)
-
-  values = (grid[0], grid[1], attenuation, buildup)
-
-  # iterate over grid
-  for xi, yi, ai, bi in np.nditer(values, op_flags = ('readwrite',)):
-    sum_shielding=sum_shielding_line(loc, (xi, yi), shielding)
-    ai[...] = sum_attenuation(sum_shielding, source)
-
-    if ignore_buildup:
-      bi[...] = 1
-    else:
-      bi[...] = sum_buildup(sum_shielding, source)
-
-  dose_map = A_eff/(d_meters ** 2) * attenuation * buildup * h10 / 1000
-
-  return dose_map
+  
+#def calc_dose_source_on_grid(source, grid):
+#  # data
+#  shielding = data[const.SHIELDING]
+#  isotope   = source[const.ISOTOPE]
+#  # c
+#  ignore_buildup = prefs[const.DISABLE_BUILDUP]
+#  A_eff = equivalent_activity(source)
+#  loc =source[const.LOCATION]
+#
+#
+#
+#  h10 = resources[const.ISOTOPES][isotope][const.H10]
+#
+#  grid_size = grid[0].shape
+#
+#  # distance gird
+#  d_meters = np.sqrt((grid[0]-loc[0])**2 + (grid[1] - loc[1])**2) / 100
+#
+#
+#  attenuation = np.zeros(grid_size)
+#  buildup = np.zeros(grid_size)
+#
+#  values = (grid[0], grid[1], attenuation, buildup)
+#
+#  # iterate over grid
+#  for xi, yi, ai, bi in np.nditer(values, op_flags = ('readwrite',)):
+#    sum_shielding=sum_shielding_line(loc, (xi, yi), shielding)
+#    ai[...] = sum_attenuation(sum_shielding, source)
+#
+#    if ignore_buildup:
+#      bi[...] = 1
+#    else:
+#      bi[...] = sum_buildup(sum_shielding, source)
+#
+#  dose_map = A_eff/(d_meters ** 2) * attenuation * buildup * h10 / 1000
+#
+#  return dose_map
   
 
   
@@ -106,43 +107,43 @@ def calc_dose_source_at_location(source, location, shielding, audit = None):
   shielding:  dictonary containing all shielding elements """
 
 
-  source_location=source[const.LOCATION]
-  isotope = source[const.ISOTOPE]
+  source_location = source[const.LOCATION]
+  isotope         = source[const.ISOTOPE]
 
 
-  ignore_buildup = prefs[const.DISABLE_BUILDUP]
+  
   A_eff = equivalent_activity(source)
-  h10 = resources[const.ISOTOPES][isotope][const.H10]
+  #h10 = resources[const.ISOTOPES][isotope][const.H10]
   log.debug('Source location: '  + str(source_location))
   log.debug('Grid location: '  + str(location))
 
   # obtain total shielding between source location and the given location
   sum_shielding=sum_shielding_line(source_location, location, shielding)
-
+  h10 = dose_rate(sum_shielding, isotope)
   d_meters = np.linalg.norm(np.array(source_location) - (np.array(location))) / 100
 
 
   # attenuation and buildup
-  attenuation = sum_attenuation(sum_shielding, source)
-  if ignore_buildup:
-    B = 1
-  else:
-    B = sum_buildup(sum_shielding, source)
+#  attenuation = sum_attenuation(sum_shielding, source)
+#  if ignore_buildup:
+#    B = 1
+#  else:
+#    B = sum_buildup(sum_shielding, source)
 
   # calculate the dose for the location
-  dose_uSv = A_eff * h10 / d_meters**2 * attenuation * B
+  dose_uSv = A_eff * h10 / d_meters**2 #* attenuation * B
   dose_mSv = dose_uSv / 1000
 
   if prefs[const.AUDIT]:
     audit[const.ALOC_SOURCE] =             [source_location]
     audit[const.ALOC_POINT] =              [location]
-    audit[const.DISABLE_BUILDUP] =         [ignore_buildup]
+    audit[const.DISABLE_BUILDUP] =         prefs[const.DISABLE_BUILDUP]
     audit[const.ISOTOPE] =                 [isotope]
     audit[const.ACTIVITY_H] =              [A_eff]
     audit[const.H10] =                     [h10]
     audit[const.ASHIELDING_MATERIALS_CM] = [str(sum_shielding)]
     audit[const.ADIST_METERS] =            [d_meters]
-    audit[const.BUILDUP] =                 [B]
+    #audit[const.BUILDUP] =                 [B]
     audit[const.AATTENUATION] =            [attenuation]
 
   return dose_mSv
@@ -177,7 +178,16 @@ def calc_dose_sources_at_locations(sources, locations, shielding, audit = None):
 
   return dose_mSv
 
-def sum_attenuation(sum_shielding, source):
+  
+def dose_rate(sum_shielding, isotope):
+   
+    t = transmission(sum_shielding, isotope)
+    energies = resources[const.ISOTOPES][isotope][const.ENERGY_keV]
+    abundance = resources[const.ISOTOPES][isotope][const.ABUNDANCE]
+    dose_rate = H10(energy_keV=energies, abundance= t * np.array(abundance))
+    return dose_rate
+    
+def transmission(sum_shielding, isotope):
   """calculate the total attenuation for the total amount of shielding
   (calculated by sum_shielding_line)
 
@@ -191,21 +201,21 @@ def sum_attenuation(sum_shielding, source):
 
    """
 
-
-  isotope = source[const.ISOTOPE]
-
+  energies = np.array(resources[const.ISOTOPES][isotope][const.ENERGY_keV])
+  
+  ignore_buildup = prefs[const.DISABLE_BUILDUP]
   # attenuation, total is product of the attenuation of each barrier
 
   #barriers
-  a = 1
+  t = np.ones(len(energies))
   for material, thickness in sum_shielding.items():
-    a *= attenuation(material, thickness, isotope)
+     t *= attenuation(energies, material, thickness)
+     if not(ignore_buildup):
+       t *= buildup(energies, material, thickness)
+     
+  
 
-  # add the shielding thickness around the source
-  for material, thickness in source[const.MATERIAL].items():
-    a *= attenuation(material, thickness, isotope)
-
-  return a
+  return t
 
 def sum_buildup(sum_shielding, source):
   """calculate the total buildup for the total amount of shielding
@@ -250,17 +260,19 @@ def sum_buildup(sum_shielding, source):
 
   return b
 
-def attenuation(material, thickness, isotope):
-  HVT = resources[const.ISOTOPES][isotope][const.HALF_VALUE_THICKNESS][material]
-  n_HVT = thickness/HVT
-  a = 0.5**n_HVT
+def attenuation(energy_keV, material, thickness):
+  
+ 
+  
+  
+  a = np.exp(-u_linear(energy_keV, material) * thickness)
 
-  log.debug('Material: ' + material + ' Thickness: ' + str(thickness) + ' Isotope: '+ isotope)
+  log.debug('Material: ' + material + ' Thickness: ' + str(thickness) + ' Energy: '+ str(energy_keV))
   log.debug('Calc. attenuation: ' +  str(a))
 
   return a
 
-def buildup(material, energy_keV, n_mfp_i):
+def buildup(energy_keV, material, thickness):
   """ Calculate the buildup factor by interpolating the table
 
       energy_keV: Photon energy in keV
@@ -268,36 +280,55 @@ def buildup(material, energy_keV, n_mfp_i):
 
   """
 
+  try:
+      table = resources[const.BUILDUP][material]
+  except:
+      print(material + ' not in buildup table!')
+      raise NameError
 
-  if n_mfp_i == 0: return 1
+      
+  if thickness == 0: return 1
 
-  n_mfp       = resources[const.BUILDUP][material][const.MFP]
-  energies    = resources[const.BUILDUP][material][const.ENERGY]
-  factors     = resources[const.BUILDUP][material][const.BUILDUP_FACTORS]
-  energy_meV  = energy_keV/1000
-
-  interp_func= interp.interp2d(n_mfp, energies,  factors, kind = 'linear')
-  factor = interp_func(n_mfp_i, energy_meV)
+  n_mfp       = np.array(table.index)
+  energies    = np.array(table.columns)
+  factors     = np.array(table)
+  energy_MeV  = energy_keV/1000
+  n_mfp_i     = number_mean_free_path(energy_keV, material, thickness)
+  interp_func= interp.interp2d(energies, n_mfp,  factors, kind = 'linear')
+  factor = interp_func(energy_MeV, n_mfp_i)[0]
 
   log.debug('Buildup factor:  ' + str(factor))
-  log.debug('MFP: '             + str(n_mfp_i))
-  log.debug('Energy: '          + str(energy_meV))
+  log.debug('Material: '        + str(material))
+  log.debug('Thickness: '       + str(thickness))
+  log.debug('Energy: '          + str(energy_MeV))
 
-  return np.squeeze(factor)
-
-
-
-def number_mean_free_path(thickness, hvt):
-  """ Calculates the number of mean free paths
-
-      thickness: material thickness in cm
-      hvt:       Half value thickness for that material"""
+  return factor
 
 
-  mu_lin = np.log(2)/hvt
-  N = thickness * mu_lin
-  return N
 
+def number_mean_free_path(energy_keV, material, thickness):
+ 
+  return thickness / u_linear(energy_keV, material)
+
+def u_linear(energy_keV, material):
+  try:
+      table = resources[const.ATTENUATION][material]
+  except:
+      print(material + ' not in attenuation table!')
+
+
+  energies = np.array(table[const.ENERGY_MeV])
+  
+  mu_p = np.array(table[const.MASS_ATTENUATION])
+  
+  interp_fcn = interp.interp1d(energies, mu_p)
+  
+  mu_p_i = interp_fcn(energy_keV/1e3)
+  
+  p = resources[const.MATERIALS][material][const.DENSITY]
+
+  return mu_p_i * p
+  
 def thickness_nmfp(nmfp, hvt):
   """ Calculates the material thickness
 

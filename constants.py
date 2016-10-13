@@ -6,7 +6,7 @@ DEF_PREFERENCE_FILE =   'default_preferences.yml'
 RESOURCE_FILE =         'resources.yml'
 
 SUM_SOURCES =           'sum_sources'
-#FILE_TYPE = 'File type'
+
 
 
 #==============================================================================
@@ -18,7 +18,7 @@ XRAY_SHIELDING =        'X-ray_shielding'
 
 ISOTOPES =              'Isotopes'
 BUILDUP =               'Buildup'
-
+ATTENUATION =           'Attenuation'
 #--------------------Materials file--------------------------------------------
 DENSITY =               'Density [g/cm^3]'
 #-----------------------------------------------------------------------------
@@ -29,12 +29,14 @@ H10 =                   'h(10) [uSv/h per MBq/m^2]'
 HALFTIME =              'Half time [min]'
 LABDA =                 'labda [s^-1]'
 HALF_VALUE_THICKNESS =  'Half value thickness [cm]'
+ABUNDANCE =             'Abundance'
 #-----------------------------------------------------------------------------
 
-#----------------------Buildup file-------------------------------------------
-MFP=                    'Mean Free path'
-ENERGY=                 'Energy [keV]'
-BUILDUP_FACTORS=        'Buildup Factors'
+#----------------------Buildup and attenuation file---------------------------
+
+ENERGY_keV=             'Energy [keV]'
+ENERGY_MeV =            'Energy [MeV]'
+MASS_ATTENUATION =      'mu/p [cm^2/g]'
 #-----------------------------------------------------------------------------
 
 

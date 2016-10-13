@@ -9,23 +9,43 @@ import numpy as np
 
 
 
-def H10(energy_keV, abundace =1):
-  energies_keV = [20, 30, 40, 50, 60, 70, 80, 100, 200, 300, 1000]
-  Hp10_ka = [0.644, 1.155, 1.529, 1.778, 1.921, 1.921, 1.916, 1.832, 1.483, 1.342, 1.167]
+def H10(energy_keV, abundance = 1, add = True):
+  energy_keV = np.array(energy_keV)
+  abundance = np.array(abundance)
+  energies_keV  = [20,      30,     40,     50,     60,     70,     80,     100,    200,    300,    1000]
+  Hp10_ka       = [0.644,   1.155,  1.529,  1.778,  1.921,  1.921,  1.916,  1.832,  1.483,  1.342,  1.167]
+  
   ratio = np.interp(energy_keV, energies_keV, Hp10_ka)
-  return ratio * kerma_air_rate(energy_keV) * 1e12 * 3600 #Bq --> MBq Sv --> uSv and seconds --> hours
   
-def kerma_air_rate(energy_keV, abundance=1):
+  h10 = ratio * kerma_air_rate(energy_keV, abundance, add = False)
+  
+  if add:
+      h10 = np.sum(h10)
+  return h10
+  
+def kerma_air_rate(energy_keV, abundance=1, add = True):
   # air kerma : dKair/dt = A/(4*pi*l^2) * uk/p * E
-  
+  energy_keV = np.array(energy_keV)
+  abundance = np.array(abundance)
   # kerma rate at 1m for 1 Bq (A=1, l=1)
   eV_per_Joule = 1.60217662e-19
+  
   energy_J = eV_per_Joule * energy_keV * 1000
-  return abundance * linear_energy_transfer_coeff_air(energy_keV) * energy_J / (4 * np.pi)
+  
+  energy_transfer_coeff = linear_energy_transfer_coeff_air(energy_keV) 
+  
+  energy_transfer_coeff *= 3600 * 1e12 #s^-1 --> h^-1 Gy--> uGy Bq --> MBq
+  
+  kerma = abundance * energy_transfer_coeff * energy_J / (4 * np.pi) #uGy/h per MBq/m^2
+  
+  if add:
+      kerma = np.sum(kerma)
+  return kerma
   
 
   
-def linear_energy_transfer_coeff_air(energy_keV):
+def linear_energy_transfer_coeff_air(energy_keV): 
+  energy_keV = np.array(energy_keV)
   Energy_MeV =  [  1.00000000e-03,   1.50000000e-03,   2.00000000e-03,
                    3.00000000e-03,   3.20000000e-03,   3.20000000e-03,
                    4.00000000e-03,   5.00000000e-03,   6.00000000e-03,
@@ -54,5 +74,22 @@ def linear_energy_transfer_coeff_air(energy_keV):
               2.06000000e-02,   1.87000000e-02,   1.74000000e-02,
               1.65000000e-02,   1.53000000e-02,   1.45000000e-02,
               1.35000000e-02,   1.31000000e-02]                 
+  coeff = np.interp(energy_keV/1e3, Energy_MeV, u_en_p) # Units cm^2 per g
+  coeff /= 10 # cm^2/g --> m^2/g
+  return coeff
 
-  return np.interp(energy_keV/1e3, Energy_MeV, u_en_p)
+if __name__ == "__main__":
+    #http://cdn.intechopen.com/pdfs-wm/32834.pdf
+    from pyshield import const
+    from pyshield import resources
+    isotopes = resources[const.ISOTOPES]
+    
+    h10_I131 = H10(isotopes['I-131'][const.ENERGY], isotopes['I-131'][const.ABUNDANCE])
+    
+    print(str(h10_I131/isotopes['I-131'][const.H10] * 100) + '% ' 'accurate for I-131')
+    
+    h10_Lu177 = H10(isotopes['Lu-177'][const.ENERGY], isotopes['Lu-177'][const.ABUNDANCE])
+    
+    print(str(h10_Lu177/isotopes['Lu-177'][const.H10] * 100) + '% ' 'accurate for Lu-177')
+    
+    

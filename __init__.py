@@ -45,7 +45,7 @@ data = {}       # shielding, sources and scale factor
 
 from pyshield.log import log, set_log_level
 
-import pyshield.excel.read as excel_import
+#import pyshield.excel.read as excel_import
 
 from pyshield.resources import resources as resources
 

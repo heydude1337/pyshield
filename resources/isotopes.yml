@@ -1,113 +1,26 @@
-F-18:
-  h(10) [uSv/h per MBq/m^2]: 0.166
-  Half time [min]: 109.7
-  labda [s^-1]: 1.05e-4
-  Energy [keV]: 511 
-  Half value thickness [cm]:
-    Lead: 0.42
-    Concrete: 3.41
-    Concrete Barite: 2.26
-    Lead Glass: 0.80  
-    Robaliet: 2.07 
-F-18 Patient:
-  h(10) [uSv/h per MBq/m^2]: 0.092
-  Half time [min]: 109.7
-  labda [s^-1]: 1.05e-4
-  Energy [keV]: 511 
-  Half value thickness [cm]:
-    Lead: 0.42
-    Concrete: 3.4
-    Concrete Barite: 2.26
-    Lead Glass: 0.80
-    Robaliet: 2.07
-Ge-68 Generator:
-  h(10) [uSv/h per MBq/m^2]: 0.0016
-  labda [s^-1]: 2.79e-8
-  Half time [min]: 415000
-  Energy [keV]: 511
-  Half value thickness [cm]:
-    Lead: 0.42
-    Concrete: 3.41
-    Concrete Barite: 2.26
-    Lead Glass: 0.80
-    Robaliet: 2.07
-Ga-68:
-  h(10) [uSv/h per MBq/m^2]: 0.16
-  labda [s^-1]: 1.70e-4
-  Half time [min]: 68
-  Energy [keV]: 511
-  Half value thickness [cm]:
-    Lead: 0.42
-    Concrete: 3.41
-    Concrete Barite: 2.26
-    Lead Glass: 0.80
-    Robaliet: 2.07
-Ge-68:
-  h(10) [uSv/h per MBq/m^2]: 0.16
-  labda [s^-1]: 2.79E-8
-  Half time [min]: 415000
-  Energy [keV]: 511
-  Half value thickness [cm]:
-    Lead: 0.42
-    Concrete: 3.41
-    Concrete Barite: 2.26
-    Lead Glass: 0.80
-    Robaliet: 2.07
-In-111:
-  h(10) [uSv/h per MBq/m^2]:  0.087
-  Energy [keV]: 145
-  labda [s^-1]: 2.86e-6
-  
-  Half value thickness [cm]:
-    Lead: 0.06
 Lu-177:
   h(10) [uSv/h per MBq/m^2]:  0.0063
   labda [s^-1]: 1.2e-6
-  Energy [keV]: 113
-  Half value thickness [cm]:
-    Lead: 0.08
-    Tungsten: 0.06
-    Concrete [2.4g/cm^3]: 9.89
-    Stone [1.5g/cm^3]: 15.824 
-   
+  Energy [keV]:    
+    - 112.948 
+    - 208.37
+  Abundance:
+    - 6.17e-2   
+    - 10.36e-2
 I-131:
   h(10) [uSv/h per MBq/m^2]:  0.066
   labda [s^-1]: 1.0e-6
-  Energy [keV]: 365
-  Half value thickness [cm]:
-    Lead: 0.39
-    Concrete [2.4g/cm^3]: 11.8
-    Stone [1.5g/cm^3]:  18.88
+  Energy [keV]: 
+    - 80.185 
+    - 284.305
+    - 364.489
+    - 636.989
+    - 722.911
+  Abundance:
+    - 2.62e-2
+    - 6.12e-2
+    - 81.5e-2
+    - 7.16e-2
+    - 1.77e-2
 
-I-131 THYROID:
-  h(10) [uSv/h per MBq/m^2]:  0.045 #adjusted
-  labda [s^-1]: 1.0e-6
-  Energy [keV]: 365
-  Half value thickness [cm]:
-    Lead: 0.39
-    Concrete [2.4g/cm^3]: 11.8
-    Stone [1.5g/cm^3]:  18.88
-I-131 TISSUE:
-  h(10) [uSv/h per MBq/m^2]:  0.034  #adjusted 
-  labda [s^-1]: 2.41e-5   # 8h biological halflife
-  Energy [keV]: 365
-  Half value thickness [cm]:
-    Lead: 0.39
-    Concrete [2.4g/cm^3]: 11.8
-    Stone [1.5g/cm^3]:  18.88
-I-131 636keV FAST:
-  h(10) [uSv/h per MBq/m^2]:  0.077 # brorrowed from Cs-137 (662keV)
-  labda [s^-1]: 2.41e-5
-  Energy [keV]: 636
-  Half value thickness [cm]:
-    Lead: 0.39
-    Concrete [2.4g/cm^3]: 2.35
-    
-I-131 636keV SLOW:
-  h(10) [uSv/h per MBq/m^2]:  0.077 # brorrowed from Cs-137 (662keV)
-  labda [s^-1]: 2.41e-5
-  Energy [keV]: 636
-  Half value thickness [cm]:
-    Lead: 0.82
-    Concrete [2.4g/cm^3]: 2.35
-    
+  
