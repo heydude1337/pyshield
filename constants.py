@@ -26,7 +26,7 @@ DENSITY =               'Density [g/cm^3]'
 #---------------------Isotopes file-------------------------------------------
 #values
 H10 =                   'h(10) [uSv/h per MBq/m^2]'
-HALFTIME =              'Half time [min]'
+#HALFTIME =              'Half time [min]'
 LABDA =                 'labda [s^-1]'
 HALF_VALUE_THICKNESS =  'Half value thickness [cm]'
 ABUNDANCE =             'Abundance'
@@ -111,6 +111,8 @@ LOCATION =            'Location [cm]'
 LOCATION_PIXELS =     'Location [pixels]'
 MATERIAL =            'Material [cm]'
 COLOR =               'Color'
+FLOOR =               'floor'
+HEIGHT =              'height'
 #-----------------------------------------------------------------------------
 
 

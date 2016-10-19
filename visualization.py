@@ -33,6 +33,11 @@ LEGEND_LOCATION       = 4
 POINT_COLOR           = 'b'
 POINT_SHAPE           = 'o'
 
+def sum_dose_maps(dose_maps):
+  dose_maps=np.stack(dose_maps)
+  print(dose_maps.shape)
+  return np.nansum(dose_maps, axis = 0)
+
 def show_floorplan():
 
   """ Show shielding barriers on top of floor plan. """
@@ -227,10 +232,9 @@ def show(results = None):
       figures[key] = plot(dose_map, points = points, title = key)
   
   if prefs[const.SHOW] in ('all', 'sum'):
-      sum_dose_maps = sum([result[2] for result in results.values()])
-      points = np.concatenate([result[0] for result in results.values()])
-      log.info(str(points.shape))
-      plot(sum_dose_maps, p = points, title = 'sum')
+      
+      #points = np.concatenate([result[0] for result in results.values()])      
+      plot(sum_dose_maps(results.values()), title = 'sum')
   
   return figures
 

@@ -10,19 +10,20 @@ from pyshield import data, prefs, const
 import pyshield.command_line as cmdl
 from pyshield.visualization import show, show_floorplan
 from pyshield.resources import read_resource
-from pyshield import log, __pkg_root__, set_log_level
-from os.path import join
+from pyshield import log, set_log_level
 from pyshield.calculations.grid import calculate_dose_map_for_source
-from pyshield.calculations.isotope import calc_dose_sources_at_locations
+from pyshield.calculations.isotope import calc_dose_source_at_location
+from pyshield.calculations.barrier import add_barriers
 import numpy as np
 import multiprocessing
 import os
 from timeit import default_timer as timer
+import pandas as pd
 
 NCORES = multiprocessing.cpu_count()
 
-
 def run_with_configuration(**kwargs):
+  
   # update settings
   for key, value in kwargs.items():
     if key in (const.ORIGIN, const.SCALE):
@@ -33,7 +34,7 @@ def run_with_configuration(**kwargs):
   log_str = 'Running with configuration: '
   pref_keys = sorted(prefs.keys())
   for key in pref_keys:
-    log_str += '\n{0}:\t\t\t\t\t {1}'.format(key, prefs[key])
+    log_str += '\n {0:<20} {1:<20}'.format(key, str(prefs[key]))
   log.info(log_str)
 
   # read yaml files from disk and set pyshield prefs accasible to whole package
@@ -76,23 +77,44 @@ def point_calculations():
 
   shielding = data[const.SHIELDING]
 
-
-  calc_func = lambda sources: calc_dose_sources_at_locations(sources,
-                                                             locations,
-                                                             shielding)
+  calc_func = lambda src, loc, table: \
+              calc_dose_source_at_location(src, loc, shielding, audit = table)
   
-  result = calc_func(sources)
+  excel_table = pd.DataFrame()
+  dosemSv = {}
+  for sname, source in sources.items():
+    if const.FLOOR in prefs.keys():
+      source[const.MATERIAL] = add_barriers(source[const.MATERIAL], 
+                                            prefs[const.FLOOR][const.MATERIAL])
+    dosemSv[sname] = 0
+    
+
+    for lname, location in locations.items():
+        excel_row = pd.DataFrame()
+        excel_row[const.ASOURCE] = [sname]
+        excel_row[const.APOINT]  = [lname]
+        dose = calc_func(source, location, excel_row)
+        dosemSv[sname] += dose
+        excel_row['Dose [mSv]'] = dosemSv[sname]
+        excel_table = pd.concat((excel_table, excel_row), ignore_index= True)
+       
+  #result = calc_func(sources)
   
   # calculate dose for each source seperately excel like
+#  if prefs[const.AUDIT]:
+#    result[const.DOSE_MSV] = result[const.AATTENUATION] * \
+#                             result[const.BUILDUP] *      \
+#                             result[const.ACTIVITY_H] *   \
+#                             result[const.H10]/1000 /     \
+#                             (result[const.ADIST_METERS]**2)
   if prefs[const.AUDIT]:
-    result[const.DOSE_MSV] = result[const.AATTENUATION] * \
-                             result[const.BUILDUP] *      \
-                             result[const.ACTIVITY_H] *   \
-                             result[const.H10]/1000 /     \
-                             (result[const.ADIST_METERS]**2)
+    excel_table.to_excel('audit.xlsx')
   log.info('\n-----Point calculations finished-----\n')
-  return result
+  return excel_table
 
+
+  
+  
 def grid_calculations():
   
   sources = data[const.SOURCES]
@@ -108,7 +130,7 @@ def grid_calculations():
   snames  = tuple(sources.keys())
   sources = tuple(sources.values())
 
-
+ 
   results = tuple(worker(calculate_dose_map_for_source, sources))
 
   end_time = timer()
@@ -116,7 +138,7 @@ def grid_calculations():
   log.info('It took {0} to complete the calculation'.format(end_time - start_time))
 
   #format results
-  results = dict(zip(snames, results))
+  results = dict(zip(snames, [r[0] for r in results]))
 
   log.info('\n-----Starting gird visualization-----\n')
  

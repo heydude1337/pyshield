@@ -8,10 +8,23 @@ Last Updated 05-02-2016
 import numpy as np
 from pyshield import const, prefs, data, log
 from pyshield.calculations.isotope import calc_dose_source_at_location
-import pyshield.calculations.xray as calc_xray
+#import pyshield.calculations.xray as calc_xray
 from scipy.interpolate import griddata
+from pyshield.calculations.barrier import add_barriers
+
+
 
 def calculate_dose_map_for_source(source):
+    if const.FLOOR in prefs.keys() and const.MATERIAL in prefs[const.FLOOR].keys():
+      floor = prefs[const.FLOOR]
+
+      source[const.MATERIAL] = add_barriers(floor[const.MATERIAL], 
+                                            source[const.MATERIAL])
+  
+  
+    
+    log.debug('Material:  ' + str(source[const.MATERIAL]))
+  
     shielding = data[const.SHIELDING]
     if source[const.TYPE] == const.ISOTOPE:
         calc_dose = lambda p: calc_dose_source_at_location(source, p,
@@ -33,7 +46,7 @@ def calculate_dose_map_for_source(source):
         # interpolate dose_points to rectangular grid
         dose_map = griddata(points, dose_points, grid)
 
-    return (points, grid, dose_map)
+    return (dose_map, points, grid)
 
 
 def grid_points(source):
@@ -44,7 +57,7 @@ def grid_points(source):
 
     origin          = np.array(data[const.ORIGIN])
     matrix_size     = np.array(data[const.FLOOR_PLAN].shape)
-    grid_spacing  = prefs[const.GRIDSIZE]
+    grid_spacing    = prefs[const.GRIDSIZE]
     span            = matrix_size[0:2] * scale
 
     area = ((-origin[0], span[1] - origin[0]),

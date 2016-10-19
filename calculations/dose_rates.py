@@ -84,11 +84,11 @@ if __name__ == "__main__":
     from pyshield import resources
     isotopes = resources[const.ISOTOPES]
     
-    h10_I131 = H10(isotopes['I-131'][const.ENERGY], isotopes['I-131'][const.ABUNDANCE])
+    h10_I131 = H10(isotopes['I-131'][const.ENERGY_keV], isotopes['I-131'][const.ABUNDANCE])
     
     print(str(h10_I131/isotopes['I-131'][const.H10] * 100) + '% ' 'accurate for I-131')
     
-    h10_Lu177 = H10(isotopes['Lu-177'][const.ENERGY], isotopes['Lu-177'][const.ABUNDANCE])
+    h10_Lu177 = H10(isotopes['Lu-177'][const.ENERGY_keV], isotopes['Lu-177'][const.ABUNDANCE])
     
     print(str(h10_Lu177/isotopes['Lu-177'][const.H10] * 100) + '% ' 'accurate for Lu-177')
     

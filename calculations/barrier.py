@@ -69,7 +69,15 @@ def sum_shielding_line(source_location, location, shielding):
 
 
 
-  
+def add_barriers(barrier1, barrier2):
+  barrier = barrier1.copy()
+  for material in barrier.keys():
+    if material in barrier2.keys():
+      barrier[material] += barrier2[material]
+  for material in barrier2.keys():
+    if material not in barrier.keys():
+      barrier[material] = barrier2[material]
+  return barrier
   
 
     
