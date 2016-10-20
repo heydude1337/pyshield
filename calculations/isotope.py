@@ -15,19 +15,37 @@ from pyshield.calculations.dose_rates import H10
 
 #import pickle
 def equivalent_activity(source):
-  # amount of activity can be either specified by number of desintegrations
-  # or the amount of activity and the duration for which it is present
-  # Optional the activity corrected for decay during this duration (default).
-  # Decay correction can be turned off
+  """ 
+  Calculate the equivalent activity in [MBqh]. Activity can be specified
+  in two different ways in a source file:
+     
+      equivalent activity [MBqh]: Ah
+      
+      No calculation needed in this case.
+      
+      or:
+    
+      activity [MBq]: A
+      duration [h]: h
+      Number of times per year: n   (default n =1)
+      Decay correction: True        (default = True)
+      
+      Equivalent activity in [MBqh] is obtained by integration in this case.
+      
+  Args:
+      source: dictionary with data for a single source
+  Returns:
+      eq_activity: equivalent activity in [MBqh] as float
+      
+  """
+      
   isotope = source[const.ISOTOPE]
 
-  if const.DESINT in source.keys():
-    # number of desintegration specified ACTIVITY and DURATION tags will be ignored
-    ndesintegrations = source[const.DESINT]
-  elif const.ACTIVITY in source.keys() and const.DURATION in source.keys():
+  if const.ACTIVITY in source.keys() and const.DURATION in source.keys():
     # activity and duration specified
     activity_bq = source[const.ACTIVITY] * 1e6
-    duration_h = source[const.DURATION]
+    duration_h  = source[const.DURATION]
+
     if const.TIMES_PER_YEAR in source.keys():
       # optional the number of times per year is specified
       times_per_year = source[const.TIMES_PER_YEAR]
@@ -44,32 +62,37 @@ def equivalent_activity(source):
     if decay_corr:
       # calculate the number of desintegrations with decau correction
       labda = resources[const.ISOTOPES][isotope][const.LABDA]
-      ndesintegrations = activity_bq * times_per_year * (1/labda - np.exp(-labda*duration_h*3600))
+      ndesintegrations = activity_bq * times_per_year \
+                         * (1/labda - np.exp(-labda*duration_h*3600))
     else:
       # calculate the number of desintegrations without decay correction
       ndesintegrations = activity_bq * times_per_year * duration_h * 3600
+      eq_activity = ndesintegrations/3600/1E6
   elif const.ACTIVITY_H in source.keys():
-    ndesintegrations = source[const.ACTIVITY_H] * 3600 * 1E6
-  # The equivalent activity is the amount of MBq of the isotope that would be
-  # needed to give the amount of desintegrations in one hour without decay corrections
+    eq_activity = source[const.ACTIVITY_H]
 
-
-  eq_activity = ndesintegrations/3600/1E6
+  
   return eq_activity
 
   
 
   
-def calc_dose_source_at_location(source, location, shielding, audit = None):
+def calc_dose_source_at_location(source, location, shielding, table = None):
 
   """" Calculates the dose that will be measured in location given a source
-  specified by source and a shielding specified by shielding
+  specified by source and a shielding specified by shielding.
+ 
+  Args:
+    
+      source:     dictonary specifying the source properties
+      location:   x, y coordinates for which the dose is calculated
+      shielding:  dictonary containing all shielding elements.
+   
+   Returns:
+       dose_mSv: the total summed dose for the source at the specified 
+                 location and defined shielding."""
 
-  source:     dictonary specifying the source properties
-  location:   x, y coordinates for which the dose is calculated
-  shielding:  dictonary containing all shielding elements """
-
-
+  
   source_location = source[const.LOCATION]
   isotope         = source[const.ISOTOPE]
   
@@ -98,25 +121,37 @@ def calc_dose_source_at_location(source, location, shielding, audit = None):
   
   d_meters = ((d_cm**2+height**2) ** 0.5) / 100
   
+  
   # calculate the dose for the location
-  dose_uSv = A_eff * h10 / d_meters**2 #* attenuation * B
+  dose_uSv = A_eff * h10 / (d_meters**2)
   dose_mSv = dose_uSv / 1000
-
-  if prefs[const.AUDIT]:
-    audit[const.ALOC_SOURCE] =             [source_location]
-    audit[const.ALOC_POINT] =              [location]
-    audit[const.DISABLE_BUILDUP] =         prefs[const.DISABLE_BUILDUP]
-    audit[const.ISOTOPE] =                 [isotope]
-    audit[const.ACTIVITY_H] =              [A_eff]
-    audit[const.H10] =                     [h10]
-    audit[const.ASHIELDING_MATERIALS_CM] = [str(sum_shielding)]
-    audit[const.ADIST_METERS] =            [d_meters]
+  log.debug('height: {0} | h10: {1} | dose_uSv: {2}'\
+            .format(height, h10, dose_uSv))
+  # add calculations details to a table if one was passed to this function
+  if table is not None:
+    table[const.ALOC_SOURCE] =             [source_location]
+    table[const.ALOC_POINT] =              [location]
+    table[const.DISABLE_BUILDUP] =         prefs[const.DISABLE_BUILDUP]
+    table[const.ISOTOPE] =                 [isotope]
+    table[const.ACTIVITY_H] =              [A_eff]
+    table[const.H10] =                     [h10]
+    table[const.ASHIELDING_MATERIALS_CM] = [str(sum_shielding)]
+    table[const.ADIST_METERS] =            [d_meters]
   
   return dose_mSv
 
 
 def dose_rate(sum_shielding, isotope):
-   
+    """ 
+    Calculate the dose rate for a specified isotope behind shielding 
+    behind shielding barriers. The dose_rate is calculated for 1MBq 
+    
+    Args:
+        sum_shielding:  dict with shielding elements
+        isotope:        isotope name (string)
+    """
+    
+    
     t         = transmission_sum(sum_shielding, isotope)
     energies  = resources[const.ISOTOPES][isotope][const.ENERGY_keV]
     abundance = resources[const.ISOTOPES][isotope][const.ABUNDANCE]
@@ -126,13 +161,19 @@ def dose_rate(sum_shielding, isotope):
     
 def transmission_sum(sum_shielding, isotope):
   """calculate the total attenuation for the total amount of shielding
-  (calculated by sum_shielding_line)
+  (calculated by sum_shielding_line). Buildup is taken into account unless
+  disabled in the pyshield options.
   
-  sum_shielding: dictonary containing the effective thickness (value) for
-                 each material (key)
+  Args:
+      sum_shielding: dictonary containing the effective thickness (value) for
+                     each material (key)
   
-  source:     dictonary specifying the source properties.
+      source:     dictonary specifying the source properties.
   
+  Returns:
+      t:  the total transmission throught the shielding elements in 
+          sum_shielding.
+          
   Note that a source can be shielded in all directions independend of the
   shielding barriers defined.
   
@@ -145,6 +186,17 @@ def transmission_sum(sum_shielding, isotope):
   return t
    
 def transmission(isotope, material, thickness, ignore_buildup = False):
+  """ Transmission through a material with thickness. Buildup is taken
+      into account unless disabled.
+      Args:
+          isotope: name of the isotope
+          material: name of the material
+          thickness: thickness of the material
+          ignore_buildup: if True buildup factor is 1.
+      Returns:
+          t: transmission factor (float)
+  """
+  
   energies = np.array(resources[const.ISOTOPES][isotope][const.ENERGY_keV])
   
   
@@ -163,7 +215,15 @@ def transmission(isotope, material, thickness, ignore_buildup = False):
 
 
 def attenuation(energy_keV, material, thickness):
-
+  """ 
+  Attenuation for a given energy through a matrial with thickness. 
+  Args:
+      energy_keV: the energy of  the photon in keV
+      material: name of the material
+      thickness: thickness of the material
+  Returns:
+      a:  attenation factor (float)
+  """
   a = np.exp(-u_linear(energy_keV, material) * thickness)
 
   log.debug('Material: ' + material + ' Thickness: ' + str(thickness) + ' Energy: '+ str(energy_keV))
@@ -172,11 +232,14 @@ def attenuation(energy_keV, material, thickness):
   return a
 
 def buildup(energy_keV, material, thickness):
-  """ Calculate the buildup factor by interpolating the table
-
-      energy_keV: Photon energy in keV
-      n_mfp:      Number of mean free paths
-
+  """ 
+  Buildup for a given energy through a matrial with thickness. 
+  Args:
+      energy_keV: the energy of  the photon in keV
+      material: name of the material
+      thickness: thickness of the material
+  Returns:
+      b:  buildup factor (float)
   """
 
   try:
@@ -206,10 +269,29 @@ def buildup(energy_keV, material, thickness):
 
 
 def number_mean_free_path(energy_keV, material, thickness):
- 
+  """"
+  Args:
+    energy_keV: the energy of  the photon in keV
+    material: name of the material
+    thickness: thickness of the material
+  Retuns:
+    number of mean free paths for a given photon enery, material and 
+    material thicknesss
+  """
+  
   return thickness * u_linear(energy_keV, material)
 
 def u_linear(energy_keV, material):
+  """
+  Args:
+    energy_keV: the energy of  the photon in keV
+    material: name of the material
+  Returns:
+    Linear attenuation coefficient in [cm^-1]
+  Raises:
+    NameError if material is not defined in the pyshield recources    
+  """
+  
   try:
       table = resources[const.ATTENUATION][material]
   except NameError:
@@ -228,14 +310,6 @@ def u_linear(energy_keV, material):
 
   return mu_p_i * p
   
-def thickness_nmfp(nmfp, hvt):
-  """ Calculates the material thickness
-
-     nmfp: number of mean free paths
-     hvt:  half value thickness of the material """
-
-  thickness = hvt/np.log(2) * nmfp
-  return thickness
 
 
 

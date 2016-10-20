@@ -10,10 +10,23 @@ import numpy as np
 
 
 def H10(energy_keV, abundance = 1, add = True):
+  """
+  Calculates the h10 in uSv/h per MBq/m^2 for given photon energy or 
+  multiple energies.
+  Args:
+    energy_keV: photon energy(ies) 
+    abundance:  abundance for each photon energy
+    add:        sum dose rates for all energies (default = True)
+  Returns:
+    dose rate in uSv/h per MBq/m^2
+  """
+  # convert tuple and list to numpy
   energy_keV = np.array(energy_keV)
   abundance = np.array(abundance)
-  energies_keV  = [20,      30,     40,     50,     60,     70,     80,     100,    200,    300,    1000]
-  Hp10_ka       = [0.644,   1.155,  1.529,  1.778,  1.921,  1.921,  1.916,  1.832,  1.483,  1.342,  1.167]
+  energies_keV  = [20,      30,     40,     50,     60,     70,     
+                   80,     100,    200,    300,    1000]
+  Hp10_ka       = [0.644,   1.155,  1.529,  1.778,  1.921,  1.921,  
+                   1.916,  1.832,  1.483,  1.342,  1.167]
   
   ratio = np.interp(energy_keV, energies_keV, Hp10_ka)
   
@@ -24,6 +37,16 @@ def H10(energy_keV, abundance = 1, add = True):
   return h10
   
 def kerma_air_rate(energy_keV, abundance=1, add = True):
+  """
+  Calculates the air kerma in uGy/h per MBq/m^2 for given photon energy or 
+  multiple energies.
+  Args:
+    energy_keV: photon energy(ies) 
+    abundance:  abundance for each photon energy
+    add:        sum dose rates for all energies (default = True)
+  Returns:
+    kerma in uGy/h per MBq/m^2
+  """
   # air kerma : dKair/dt = A/(4*pi*l^2) * uk/p * E
   energy_keV = np.array(energy_keV)
   abundance = np.array(abundance)
@@ -45,7 +68,18 @@ def kerma_air_rate(energy_keV, abundance=1, add = True):
 
   
 def linear_energy_transfer_coeff_air(energy_keV): 
+  """ 
+  Calculates the linear energy transfer coefficients by interpolation.
+  Source data is obtained from the NIST XCOM database.
+  
+  Args:
+    energy_keV: photon energy(ies) in keV
+  Returns:
+    linear energy tranfer rate(s)
+  """
+  
   energy_keV = np.array(energy_keV)
+  # source data
   Energy_MeV =  [  1.00000000e-03,   1.50000000e-03,   2.00000000e-03,
                    3.00000000e-03,   3.20000000e-03,   3.20000000e-03,
                    4.00000000e-03,   5.00000000e-03,   6.00000000e-03,

@@ -49,7 +49,7 @@ MASS_ATTENUATION =      'mu/p [cm^2/g]'
 SOURCES =               'source_file'
 SHIELDING =             'shielding_file'
 FLOOR_PLAN =            'floor_plan'
-XY =                    'location_receiving_points'
+XY =                    'points'
 
 #PREFERENCES = 'preferences'
 AREA =                  'area'

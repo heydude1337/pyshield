@@ -54,6 +54,8 @@ def set_log_level(loglevel_str):
     level = logging.DEBUG
   elif loglevel_str == const.LOG_INFO:
     level = logging.INFO
+  elif type(loglevel_str) not in (str,):
+    level = loglevel_str
   else:
     level = LOG_LEVEL
   for handler in log.handlers:

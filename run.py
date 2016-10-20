@@ -5,7 +5,7 @@ Created on Mon Mar 28 18:17:39 2016
 @author: msegbers
 """
 
-import argparse
+import pyshield
 from pyshield import data, prefs, const
 import pyshield.command_line as cmdl
 from pyshield.visualization import show, show_floorplan
@@ -23,38 +23,64 @@ import pandas as pd
 NCORES = multiprocessing.cpu_count()
 
 def run_with_configuration(**kwargs):
+  """ See pyshield doc """ 
   
-  # update settings
+  # update package settings
   for key, value in kwargs.items():
     if key in (const.ORIGIN, const.SCALE):
         data[key] = value
     else:
         prefs[key] = value
-
+  
+  set_log_level(prefs[const.LOG])
+  
+  # log all settings to the pyshield logger
   log_str = 'Running with configuration: '
   pref_keys = sorted(prefs.keys())
   for key in pref_keys:
     log_str += '\n {0:<20} {1:<20}'.format(key, str(prefs[key]))
   log.info(log_str)
 
-  # read yaml files from disk and set pyshield prefs accasible to whole package
+  # read yaml files from disk 
   data_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
   for key in data_keys:
-    try:
-      if key in prefs.keys():
-          data[key] = read_resource(prefs[key])
-      else:
-        # empty image with size area if no image is defined
-        if key == const.FLOOR_PLAN:
-          if const.AREA in prefs.keys():              
-              data[key] = np.zeros(const.AREA)
-              prefs[const.SCALE] = 1 
-    except:
-      data[key] = {}
-      print('Cannot read file for {0} data'.format(key))
-   
-  set_log_level(prefs[const.LOG])
+    if key in prefs.keys():
+      try:
+        data[key] = read_resource(prefs[key])
+      except:       
+        if key == const.XY and type(prefs[const.XY]) in (tuple, list):
+          points = {}
+          for i, p in enumerate(prefs[const.XY]):
+            points['point ' + str(i)] = p
+          data[const.XY] = points
+        elif key == const.SOURCES:
+          if key in prefs.keys() and type(prefs[const.SOURCES]) is dict:
+            log.debug('Sources loaded as dict')
+            data[const.SOURCES] = prefs[const.SOURCES]
+        elif key == const.SHIELDING:
+          if key in prefs.keys() and type(prefs[const.SHIELDING]) is dict:
+            data[const.SHIELDING] = prefs[const.SHIELDING]
+        else:
+          data[key] = {}
+          log.info('Cannot read file for {0} data'.format(key))
+        
+  # make empty image with size area if no image is defined       
+  if const.FLOOR_PLAN not in data.keys():
+    data[const.FLOOR_PLAN] = np.zeros(prefs[const.AREA])
+    log.debug('Empty area with size: {0}'.format(data[const.FLOOR_PLAN].shape))
+    if const.SCALE not in prefs.keys():
+      prefs[const.SCALE] = 1
 
+  # set shielding empty if no file was defined
+  if const.SHIELDING not in data.keys():
+    data[const.SHIELDING] = {}
+    log.debug('Empyt shielding set because no file was specified')
+
+  # set empty shielding around source if it was not specified
+  for source in data[const.SOURCES].values():
+    if const.MATERIAL not in source.keys():
+      source[const.MATERIAL] ={}
+  
   # do point calculations, grid calculations or just display based on settings
   if prefs[const.CALCULATE] == const.GRID:
     result = grid_calculations()
@@ -68,6 +94,10 @@ def run_with_configuration(**kwargs):
   return result
 
 def point_calculations():
+  """ Performs calculation for a given set of points defined by the
+      \'points\' option in run_with_configuration function. Returns a pandas
+      Dataframe that contains information for each point and for each source."""
+  
   log.info('\n-----Starting point calculations-----\n')
 
   locations = data[const.XY]
@@ -78,7 +108,7 @@ def point_calculations():
   shielding = data[const.SHIELDING]
 
   calc_func = lambda src, loc, table: \
-              calc_dose_source_at_location(src, loc, shielding, audit = table)
+              calc_dose_source_at_location(src, loc, shielding, table = table)
   
   excel_table = pd.DataFrame()
   dosemSv = {}
@@ -93,22 +123,11 @@ def point_calculations():
         excel_row = pd.DataFrame()
         excel_row[const.ASOURCE] = [sname]
         excel_row[const.APOINT]  = [lname]
-        dose = calc_func(source, location, excel_row)
-        dosemSv[sname] += dose
-        excel_row['Dose [mSv]'] = dosemSv[sname]
+        dose = calc_func(source, location, excel_row)        
+        excel_row['Dose [mSv]'] = dose 
         excel_table = pd.concat((excel_table, excel_row), ignore_index= True)
-       
-  #result = calc_func(sources)
+ 
   
-  # calculate dose for each source seperately excel like
-#  if prefs[const.AUDIT]:
-#    result[const.DOSE_MSV] = result[const.AATTENUATION] * \
-#                             result[const.BUILDUP] *      \
-#                             result[const.ACTIVITY_H] *   \
-#                             result[const.H10]/1000 /     \
-#                             (result[const.ADIST_METERS]**2)
-  if prefs[const.AUDIT]:
-    excel_table.to_excel('audit.xlsx')
   log.info('\n-----Point calculations finished-----\n')
   return excel_table
 
@@ -116,22 +135,37 @@ def point_calculations():
   
   
 def grid_calculations():
-  
+  """ Performs calculations for all points on a grid. grid type and grid
+      sampling should by specified with the \'grid\', \'grid_size\' and
+      \'number_of_angles\' option in run_with configuration.
+      
+      Returns:
+          dictionary with dose_maps (2D numpy arrays) as values for each
+          source name (keys)."""
+  def wrapper(source_name, source):
+    log.info('Calculate: {0}'.format(source_name))
+    result = calculate_dose_map_for_source(source)       
+    log.info('{0} Finished!'.format(source_name))
+    return result
+
   sources = data[const.SOURCES]
 
 
   log.info('\n-----Starting grid calculations-----\n')
 
-
+  # get single cpu or multi cpu worker
   worker = get_worker()
 
-  # do calculations
-  start_time = timer()
   snames  = tuple(sources.keys())
   sources = tuple(sources.values())
-
- 
-  results = tuple(worker(calculate_dose_map_for_source, sources))
+  
+  start_time = timer()
+  
+  # do calculations
+  if prefs[const.MULTI_CPU]:
+    results = tuple(worker(wrapper, zip(snames, sources)))
+  else:    
+    results = tuple(worker(wrapper, snames, sources))
 
   end_time = timer()
 
@@ -139,14 +173,27 @@ def grid_calculations():
 
   #format results
   results = dict(zip(snames, [r[0] for r in results]))
-
+  
   log.info('\n-----Starting gird visualization-----\n')
+  show(results = results)
+  
  
-
   return results
 
 def get_worker():
+  """ Return the map function for either single core or multi core 
+      calculations based on the \'multi_cpu\' flag in run_with_configuration.
+      
+      Note: Windows cannot perform multi core calculations.
+      
+        Returns:
+            map (builtin python map function) or
+            map (method from the multiprocessing.Pool object) """
+      
   # select single core or multi core processing
+ 
+    
+  
   if prefs[const.MULTI_CPU]:
     if not(os.name == 'posix'):
       print('Cannot use multi processing on non posix os (Windows)')
@@ -160,28 +207,10 @@ def get_worker():
     worker = map
     log.info('Single core calculations')
   return worker
-  
-  
-def parse_args():
-  parser = argparse.ArgumentParser()
 
-  prefix = {}
+# copy pyshield documentation to run with configuration  
+run_with_configuration.__doc__ = pyshield.__doc__
 
-  for name, arg in cmdl.COMMAND_LINE_ARGS.items():
-    prefix[name] = arg.pop(cmdl.PREFIX, None)
-    prefix[name] = ['--' + p for p in prefix[name]]
-
-  for name, arg in cmdl.COMMAND_LINE_ARGS.items():
-    parser.add_argument(*prefix[name], **arg)
-  return vars(parser.parse_args())
-
-
-if __name__ == '__main__':
-  # start from commandlune with commandline arguments
-  log.info('\n-----Commandline start-----\n')
-  #prefs = parse_args()
-  set_log_level(prefs[const.LOG])
-  #run(**prefs)
 
 
 

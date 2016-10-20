@@ -26,7 +26,7 @@ SHOW_POINTS = False
 # Visualisation options
 WALL_COLOR            = 'b'
 WALL_LINE_STYLE       = '-'
-WALL_THICKNESS_SCALE  = 0.3
+WALL_THICKNESS_SCALE  = 0.05
 SOURCE_COLOR          = 'r'
 SOURCE_SHAPE          = 'o'
 LEGEND_LOCATION       = 4
