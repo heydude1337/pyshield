@@ -2,14 +2,15 @@ Lead:
   Density [g/cm^3]: 11.34
   Composition:
     Pb: 1
-#Lead Glass:
-#  Composition:
-#    #source: http://physics.nist.gov/PhysRefData/XrayMassCoef/tab2.html
-#    O: 0.156453
-#    Si: 0.080866
-#    Ti: 0.008092
-#    As: 0.002651
-#    Pb: 0.751938
+Lead Glass:
+  Density [g/cm^3]: 6.22
+  Composition:
+    #source: http://physics.nist.gov/PhysRefData/XrayMassCoef/tab2.html
+    O: 0.156453
+    Si: 0.080866
+    Ti: 0.008092
+    As: 0.002651
+    Pb: 0.751938
 Concrete:
   Density [g/cm^3]: 2.3
   Composition:
@@ -29,6 +30,8 @@ Robalith 2.8:
   Density [g/cm^3]: 2.8
 Robalith 3.2:
   Density [g/cm^3]: 3.2
+Robalith 3.35:
+  Density [g/cm^3]: 3.35
 Robalith 3.5:
   Density [g/cm^3]: 3.5
 Robalith 3.7:

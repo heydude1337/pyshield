@@ -44,10 +44,13 @@ def run_with_configuration(**kwargs):
   # read yaml files from disk 
   data_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
   for key in data_keys:
-    if key in prefs.keys():
+    if key not in prefs.keys():
+      data[key] = {}
+      log.debug('No input was supplied for {0}'.format(key))
+    else:
       try:
         data[key] = read_resource(prefs[key])
-      except:       
+      except TypeError:       
         if key == const.XY and type(prefs[const.XY]) in (tuple, list):
           points = {}
           for i, p in enumerate(prefs[const.XY]):
@@ -163,7 +166,7 @@ def grid_calculations():
   
   # do calculations
   if prefs[const.MULTI_CPU]:
-    results = tuple(worker(wrapper, zip(snames, sources)))
+    results = tuple(worker(calculate_dose_map_for_source,  sources))
   else:    
     results = tuple(worker(wrapper, snames, sources))
 
@@ -202,7 +205,7 @@ def get_worker():
     pool = multiprocessing.Pool(NCORES)
     worker = pool.map
     log.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
-    log.info('Multi core calculations')
+    
   else:
     worker = map
     log.info('Single core calculations')

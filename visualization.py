@@ -118,13 +118,17 @@ def show_floorplan():
   #plot shielding baririers
  # print(scale)
   for name, barrier in shielding.items():
-    log.debug('deawing {0}'.format(name))
+    log.debug('drawing {0}'.format(name))
     l=barrier[const.LOCATION]
     
     linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE 
-    
+    linewidth = 5 #hack
     if const.COLOR in barrier.keys():
       color = barrier[const.COLOR]
+      if type(color) in (tuple, list) and len(color) == 3:
+        #rgb color
+        color = [c/255 for c in color]
+      #color = WALL_COLOR #HACK
     else:
       color = WALL_COLOR
 
@@ -227,9 +231,9 @@ def show(results = None):
   figures={}
   # show and save all figures it config property is set to show all
   if prefs[const.SHOW].lower() == 'all':
-    for key, result in results.items():
-      points, grid, dose_map = result
-      figures[key] = plot(dose_map, points = points, title = key)
+    for key, dose_map in results.items():
+      #points, grid, dose_map = result
+      figures[key] = plot(dose_map,  title = key)
   
   if prefs[const.SHOW] in ('all', 'sum'):
       
@@ -303,17 +307,25 @@ def save_figure(fig, source_name):
   log.debug('Writing: ' + fname)
   fig.savefig(fname, dpi=dpi, bbox_inches='tight')
 
-def cursor(fig = None, npoints = 2, name = ''):
+def cursor(fig = None, npoints = 2, name = '', shielding = {'Lead': 1}):
+  
     if fig is None:
         fig = plt.gcf()
     p = fig.ginput(npoints)
     p = np.round(p)
-    entry = '{name}:\n  Location [cm]:\n    - {x1}\n    - {y1}\n    - {x2}\n    - {y2}'
-    print(entry.format(name = name, 
+    
+    
+    entry = '{name}:\n  Location [cm]:\n    - {x1}\n    - {y1}\n    - {x2}\n    - {y2}\n'
+    shielding_entry = '  ' + const.MATERIAL + ':'
+    for material, thickness in shielding.items():
+      shielding_entry +='\n    {0}: {1}'.format(material, thickness)
+    wall = entry.format(name = name, 
                  x1 = p[0,0],
                  y1 = p[0,1],
                  x2 = p[1,0],
-                 y2 = p[1,1]))
+                 y2 = p[1,1])
+    wall += shielding_entry
+    print(wall)
     
     return p
 

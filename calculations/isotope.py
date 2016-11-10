@@ -43,7 +43,7 @@ def equivalent_activity(source):
 
   if const.ACTIVITY in source.keys() and const.DURATION in source.keys():
     # activity and duration specified
-    activity_bq = source[const.ACTIVITY] * 1e6
+    activity_MBq = source[const.ACTIVITY]
     duration_h  = source[const.DURATION]
 
     if const.TIMES_PER_YEAR in source.keys():
@@ -62,15 +62,17 @@ def equivalent_activity(source):
     if decay_corr:
       # calculate the number of desintegrations with decau correction
       labda = resources[const.ISOTOPES][isotope][const.LABDA]
-      ndesintegrations = activity_bq * times_per_year \
+      ndesintegrations = activity_MBq * 1e6 * times_per_year \
                          * (1/labda - np.exp(-labda*duration_h*3600))
     else:
       # calculate the number of desintegrations without decay correction
-      ndesintegrations = activity_bq * times_per_year * duration_h * 3600
-      eq_activity = ndesintegrations/3600/1E6
+      ndesintegrations = activity_MBq * times_per_year * duration_h * 3600
+    
+    eq_activity = ndesintegrations/3600/1E6
   elif const.ACTIVITY_H in source.keys():
     eq_activity = source[const.ACTIVITY_H]
-
+  elif const.DESINT in source.keys():
+    eq_activity = source[const.DESINT]/3600/1E6
   
   return eq_activity
 

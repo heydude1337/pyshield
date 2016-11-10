@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import pyshield
 from pyshield import __pkg_root__, const, log
 from pyshield.yaml_wrap import yaml_wrap
-import os
 from os.path import join, splitext
 import pandas as pd
 
@@ -25,8 +23,9 @@ def read_resources(files = None):
   return data
 
 def read_resource(file):
-
-  log.debug('Loading: '  + file)
+  if type(file) not in (str,):
+    raise TypeError
+  log.debug('Loading: {0}'.format(file))
   ext = splitext(file)[1].lower()
    
   if ext in ('.yml','.yaml'):
@@ -38,9 +37,8 @@ def read_resource(file):
   elif ext in ('.png', '.jpeg', '.jpg', '.bmp'):
     log.debug('reading image')
     data=np.flipud(mpimg.imread(file))
-  else:
-    print(pyshield.ERR_FILE.format(file=file))
-    raise KeyError
+  else:    
+    raise TypeError
   return data
 
 

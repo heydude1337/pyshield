@@ -8,7 +8,15 @@ Created on Mon Oct 10 11:35:41 2016
 import numpy as np
 
 
-
+def ratio_H10_air_kerma(energy_keV):
+  # source http://www.nucleonica.net/wiki/index.php?title=Help%3ADose_Rate_Constants%2B%2B#Air_kerma_rate_constant.2C_.CE.93Kair
+  E0 = 10
+  xi = np.log(energy_keV / E0)
+  
+  r = xi / (1.465 * xi**2 - 4.414 * xi + 4.789) \
+      + 0.7006 * np.arctan(0.6519 * xi)
+  return r
+  
 def H10(energy_keV, abundance = 1, add = True):
   """
   Calculates the h10 in uSv/h per MBq/m^2 for given photon energy or 
@@ -28,7 +36,8 @@ def H10(energy_keV, abundance = 1, add = True):
   Hp10_ka       = [0.644,   1.155,  1.529,  1.778,  1.921,  1.921,  
                    1.916,  1.832,  1.483,  1.342,  1.167]
   
-  ratio = np.interp(energy_keV, energies_keV, Hp10_ka)
+  #ratio = np.interp(energy_keV, energies_keV, Hp10_ka)
+  ratio = ratio_H10_air_kerma(energy_keV)
   
   h10 = ratio * kerma_air_rate(energy_keV, abundance, add = False)
   
@@ -51,15 +60,15 @@ def kerma_air_rate(energy_keV, abundance=1, add = True):
   energy_keV = np.array(energy_keV)
   abundance = np.array(abundance)
   # kerma rate at 1m for 1 Bq (A=1, l=1)
-  eV_per_Joule = 1.60217662e-19
+  Joule_per_eV = 1.60217662e-19
   
-  energy_J = eV_per_Joule * energy_keV * 1000
+  energy_J = Joule_per_eV * energy_keV * 1000
   
-  energy_transfer_coeff = linear_energy_transfer_coeff_air(energy_keV) 
+  energy_absorption_coeff = linear_energy_absorption_coeff_air(energy_keV) 
   
-  energy_transfer_coeff *= 3600 * 1e12 #s^-1 --> h^-1 Gy--> uGy Bq --> MBq
+  energy_absorption_coeff *= 3600 * 1e12 #s^-1 --> h^-1 Gy--> uGy Bq --> MBq
   
-  kerma = abundance * energy_transfer_coeff * energy_J / (4 * np.pi) #uGy/h per MBq/m^2
+  kerma = abundance * energy_absorption_coeff * energy_J / (4 * np.pi) #uGy/h per MBq/m^2
   
   if add:
       kerma = np.sum(kerma)
@@ -67,7 +76,7 @@ def kerma_air_rate(energy_keV, abundance=1, add = True):
   
 
   
-def linear_energy_transfer_coeff_air(energy_keV): 
+def linear_energy_absorption_coeff_air(energy_keV): 
   """ 
   Calculates the linear energy transfer coefficients by interpolation.
   Source data is obtained from the NIST XCOM database.
@@ -117,13 +126,12 @@ if __name__ == "__main__":
     from pyshield import const
     from pyshield import resources
     isotopes = resources[const.ISOTOPES]
-    
-    h10_I131 = H10(isotopes['I-131'][const.ENERGY_keV], isotopes['I-131'][const.ABUNDANCE])
-    
-    print(str(h10_I131/isotopes['I-131'][const.H10] * 100) + '% ' 'accurate for I-131')
-    
-    h10_Lu177 = H10(isotopes['Lu-177'][const.ENERGY_keV], isotopes['Lu-177'][const.ABUNDANCE])
-    
-    print(str(h10_Lu177/isotopes['Lu-177'][const.H10] * 100) + '% ' 'accurate for Lu-177')
-    
-    
+    dose_rates = {}
+    for isotope in isotopes.keys():
+      dose_rates[isotope] = H10(isotopes[isotope][const.ENERGY_keV], isotopes[isotope][const.ABUNDANCE])
+      
+      print(str(dose_rates[isotope]/isotopes[isotope][const.H10] * 100) + '% ' 'accurate for {0}'.format(isotope))
+      
+     
+     
+     

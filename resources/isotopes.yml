@@ -22,5 +22,46 @@ I-131:
     - 81.5e-2
     - 7.16e-2
  #   - 1.77e-2
+F-18:
+  h(10) [uSv/h per MBq/m^2]: 0.166
+  labda [s^-1]: 6.582e3
+  Energy [keV]: 
+    - 511
+  Abundance:
+    - 2
+Tc-99m:
+  h(10) [uSv/h per MBq/m^2]: 0.166
+  labda [s^-1]: 6.582e3
+  Energy [keV]: 
+    - 511
+  Abundance:
+    - 2
+      
+    
+Ga-68:
+  h(10) [uSv/h per MBq/m^2]: 0.16
+  labda [s^-1]: 2.79e-8
+  Energy [keV]: 
+    - 511
+    - 1077
+  Abundance:
+    - 1.780
+    - 0.033
+#12 (fictieve) bronconstante generator
+#Specificatie: 0.5 mR / MBq of surface area --> 4.6uSv/MBq/uur op oppervlak
+#generator is within 13 x 13 x 15.5cm
+#Pointsource approximation --> source in center of package
+#source at least 15.5/2=7.75cm away from surface
 
-  
+#4.6uSv/MBq per uur op 7.75cm
+#--> (7.75/100)**2 * 4.6 = 0.028uSv/uur per MBq/m^2
+# --> isotoop aangemaakt met deze bronconstante met naam Ge-68 Generator
+Ge-68 Generator:
+  h(10) [uSv/h per MBq/m^2]: 0.028
+  labda [s^-1]: 2.79e-8
+  Energy [keV]: 
+    - 511
+    - 1077
+  Abundance:
+    - 0.3115
+    - 0.001780
