@@ -26,8 +26,8 @@ Concrete:
     Ca: 0.042951
     Fe: 0.006435
     
-Robalith 2.8:
-  Density [g/cm^3]: 2.8
+#Robalith 2.8:
+#  Density [g/cm^3]: 2.8
 Robalith 3.2:
   Density [g/cm^3]: 3.2
 Robalith 3.35:

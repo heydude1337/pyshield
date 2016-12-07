@@ -157,6 +157,11 @@ def dose_rate(sum_shielding, isotope):
     t         = transmission_sum(sum_shielding, isotope)
     energies  = resources[const.ISOTOPES][isotope][const.ENERGY_keV]
     abundance = resources[const.ISOTOPES][isotope][const.ABUNDANCE]
+    
+    log.debug(isotope)
+    log.debug('t: {0}'.format(str(t)))
+    log.debug('energies: {0}'.format(str(energies)))
+    log.debug('abundance: {0}'.format(str(abundance)))
     dose_rate = H10(energy_keV=energies, abundance= t * np.array(abundance))
     
     return dose_rate

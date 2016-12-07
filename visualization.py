@@ -8,9 +8,10 @@ config file are shown as well.
 Last Updated 05-02-2016
 """
 
-
+import pyshield
 from matplotlib import pyplot as plt
 from pyshield import const, prefs, data, log
+#from pyshield.run import run_with_configuration
 from pyshield.resources import resources
 from pyshield.calculations.isotope import equivalent_activity
 from os.path import join
@@ -85,7 +86,23 @@ def show_floorplan():
     activity = equivalent_activity(source[const.DESINT], source[const.ISOTOPE])
     text = text.format(isotope = source[const.ISOTOPE], activity = str(np.round(activity)) + ' MBq')
     return text
-
+  def figure_click(event):
+    if event.dblclick:
+      log.info('double click')
+      log.info(str(event))
+      config = {}
+      config = data['run configuration']
+      config[const.CALCULATE] = const.XY
+     
+      config[const.XY] = {'double click': (event.xdata, event.ydata)}
+     
+      result = pyshield.run.run_with_configuration(**config)
+    
+      log.info( 'Finished')
+      
+      print('{0}'.format(result))
+      print('Total Dose: {0}'.format(np.sum(result['Dose [mSv]'])))
+      
   def object_click(event):
     """Show information about line with mouse click on the line """
 
@@ -123,20 +140,38 @@ def show_floorplan():
     
     linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE 
     linewidth = 5 #hack
-    if const.COLOR in barrier.keys():
-      color = barrier[const.COLOR]
+    
+    if const.MATERIAL_COLORS in prefs.keys():
+      colors = data[const.MATERIAL_COLORS]
+      material = list(barrier[const.MATERIAL].keys())[0]
+      thickness = barrier[const.MATERIAL][material]
+      color =  colors[material][thickness]
+                               
+     
+      #color = barrier[const.COLOR]
       if type(color) in (tuple, list) and len(color) == 3:
         #rgb color
         color = [c/255 for c in color]
       #color = WALL_COLOR #HACK
     else:
       color = WALL_COLOR
-
+    if len(barrier[const.MATERIAL]) > 1:
+      label = 'multiple materials'
+    else:
+      material = list(barrier[const.MATERIAL].keys())[0]
+      thickness = float(barrier[const.MATERIAL][material])
+      label = '{0}: {1} cm'.format(material, thickness)
+    
+    _, labels = plt.gca().get_legend_handles_labels()
+    
+    if label in labels:
+      label = None
     line, = plt.plot((l[0], l[2]), (l[1], l[3]), 
                       color     = color,
                       linestyle = WALL_LINE_STYLE,
                       linewidth = linewidth,
-                      picker    = linewidth)
+                      picker    = linewidth,
+                      label = label)
 
     line.name = name
 
@@ -166,12 +201,26 @@ def show_floorplan():
                       color =  POINT_COLOR,
                       marker = POINT_SHAPE,
                       picker = 5)
+  
+  # sort and show legend
+  box = plt.gca().get_position()
+  plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+
+  
+  
+  handles, labels = plt.gca().get_legend_handles_labels()
+  # sort both labels and handles by labels
+  labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+  legend = plt.gca().legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+ 
 
   fig.canvas.mpl_connect('pick_event', object_click)
-  return fig
+  fig.canvas.mpl_connect('button_press_event', figure_click)
+  return (fig, legend)
 
 
-def plot_dose_map(floorplan, dose_map=None):
+def plot_dose_map(floorplan, dose_map=None, legend = None):
   """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
 
   clim = prefs[const.CLIM_HEATMAP]
@@ -181,7 +230,7 @@ def plot_dose_map(floorplan, dose_map=None):
   log.debug('colormap: {0}'.format(colormap))
 
   log.debug('loading floor_plan')
-  fig=show_floorplan()
+  fig, legend =show_floorplan()
   log.debug('floor_plan loaded')
   # show heatmap
   plt.imshow(dose_map, extent=get_extent(),
@@ -200,7 +249,8 @@ def plot_dose_map(floorplan, dose_map=None):
 
   # show legend for isocontours
   legend_labels = [str(value) + ' mSv' for value in prefs[const.ISO_VALUES]]
-  plt.legend(C.collections, legend_labels, loc = LEGEND_LOCATION )
+  plt.legend(C.collections, legend_labels, loc=LEGEND_LOCATION)
+  plt.gca().add_artist(legend)
   return fig
 
 
@@ -212,7 +262,7 @@ def show(results = None):
   
   
   if results is None:
-    show_floorplan()
+    fig, legend = show_floorplan()
     return 
     
   def plot(dose_map, p = None, title = ''):

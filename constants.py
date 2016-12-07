@@ -50,7 +50,7 @@ SOURCES =               'source_file'
 SHIELDING =             'shielding_file'
 FLOOR_PLAN =            'floor_plan'
 XY =                    'points'
-
+MATERIAL_COLORS =       'material colors'
 #PREFERENCES = 'preferences'
 AREA =                  'area'
 SCALE =                 'scale'

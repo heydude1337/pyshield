@@ -42,7 +42,7 @@ def run_with_configuration(**kwargs):
   log.info(log_str)
 
   # read yaml files from disk 
-  data_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY)
+  data_keys = (const.SOURCES, const.SHIELDING, const.FLOOR_PLAN, const.XY, const.MATERIAL_COLORS)
   for key in data_keys:
     if key not in prefs.keys():
       data[key] = {}
@@ -56,6 +56,9 @@ def run_with_configuration(**kwargs):
           for i, p in enumerate(prefs[const.XY]):
             points['point ' + str(i)] = p
           data[const.XY] = points
+        elif key==const.XY and type(prefs[const.XY]) is dict:
+          data[const.XY] = prefs[const.XY]
+        
         elif key == const.SOURCES:
           if key in prefs.keys() and type(prefs[const.SOURCES]) is dict:
             log.debug('Sources loaded as dict')
@@ -66,7 +69,9 @@ def run_with_configuration(**kwargs):
         else:
           data[key] = {}
           log.info('Cannot read file for {0} data'.format(key))
-        
+  
+  data['run configuration'] = kwargs.copy()
+  
   # make empty image with size area if no image is defined       
   if const.FLOOR_PLAN not in data.keys():
     data[const.FLOOR_PLAN] = np.zeros(prefs[const.AREA])
@@ -94,6 +99,7 @@ def run_with_configuration(**kwargs):
     #return (pyshield.data, pyshield.prefs)
     show_floorplan()
     result = None
+  
   return result
 
 def point_calculations():
