@@ -99,6 +99,7 @@ def calc_dose_source_at_location(source, location, shielding, table = None):
   isotope         = source[const.ISOTOPE]
   
   if const.FLOOR in prefs.keys() and const.HEIGHT in prefs[const.FLOOR].keys():
+    log.debug('Floor height: {0}'.format(prefs[const.FLOOR][const.HEIGHT]))
     height = prefs[const.FLOOR][const.HEIGHT]
   else:
     height = 0
@@ -113,7 +114,10 @@ def calc_dose_source_at_location(source, location, shielding, table = None):
   sum_shielding=sum_shielding_line(source_location, location, shielding)
   
   #include shielding from source
-  sum_shielding = add_barriers(sum_shielding, source[const.MATERIAL])
+  sum_shielding = {**sum_shielding, **source[const.MATERIAL]}
+  for material, thickness in sum_shielding.items():
+    log.debug('Source shielded with material: {0}'.format(material) + \
+              ' and thickness: {0}'.format(thickness))
   
   log.debug('Shielding: ' + str(sum_shielding))
   
@@ -189,6 +193,7 @@ def transmission_sum(sum_shielding, isotope):
   energies = np.array(resources[const.ISOTOPES][isotope][const.ENERGY_keV])
   t = np.ones(len(energies))
   for material, thickness in sum_shielding.items():
+    log.debug('transmission through {0}cm {1}'.format(thickness, material))
     t *= transmission(isotope, material, thickness, ignore_buildup)
   return t
    

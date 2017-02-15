@@ -20,7 +20,11 @@ import os
 from timeit import default_timer as timer
 import pandas as pd
 
+
 NCORES = multiprocessing.cpu_count()
+
+
+
 
 def run_with_configuration(**kwargs):
   """ See pyshield doc """ 
@@ -99,7 +103,7 @@ def run_with_configuration(**kwargs):
     #return (pyshield.data, pyshield.prefs)
     show_floorplan()
     result = None
-  
+ 
   return result
 
 def point_calculations():
@@ -163,7 +167,7 @@ def grid_calculations():
   log.info('\n-----Starting grid calculations-----\n')
 
   # get single cpu or multi cpu worker
-  worker = get_worker()
+  pool, worker = get_worker()
 
   snames  = tuple(sources.keys())
   sources = tuple(sources.values())
@@ -185,7 +189,8 @@ def grid_calculations():
   
   log.info('\n-----Starting gird visualization-----\n')
   show(results = results)
-  
+  if pool is not None:
+    pool.close()
  
   return results
 
@@ -207,15 +212,15 @@ def get_worker():
     if not(os.name == 'posix'):
       print('Cannot use multi processing on non posix os (Windows)')
       raise multiprocessing.ProcessError
-
     pool = multiprocessing.Pool(NCORES)
     worker = pool.map
     log.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
     
   else:
     worker = map
+    pool = None
     log.info('Single core calculations')
-  return worker
+  return (pool, worker)
 
 # copy pyshield documentation to run with configuration  
 run_with_configuration.__doc__ = pyshield.__doc__
