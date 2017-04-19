@@ -1,9 +1,11 @@
-from os.path import split, join
+from os.path import split
 
 from pyshield.yaml_wrap.yaml_wrap import read_yaml, write_yaml
 
-from pyshield import constants as const
+from pyshield import constants as CONST
+
 from pyshield.documentation import __doc__
+
 #__doc__    = pyshield.documentation.__doc__
 __author__ = "Marcel Segbers"
 __copyright__ = "Copyright 2016, The pyshield Project"
@@ -14,15 +16,12 @@ __email__ = "m.segbers@erasmusmc.nl"
 __status__ = "Beta"
 __pkg_root__ = split(__file__)[0]
 
-prefs = read_yaml(join(__pkg_root__, const.DEF_PREFERENCE_FILE))
-
-
-data = {}       # shielding, sources and scale factor
-
 
 from pyshield.log import log, set_log_level
 
-from pyshield.resources import resources as resources
+from pyshield.getconfig import get_setting, set_setting, is_setting
+
+from pyshield.resources import RESOURCES
 
 from pyshield.resources import read_resource
 

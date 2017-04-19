@@ -1,27 +1,27 @@
 Lu-177:
   h(10) [uSv/h per MBq/m^2]:  0.0063
   labda [s^-1]: 1.2e-6
-  Energy [keV]:    
-    - 112.948 
+  Energy [keV]:
+    - 112.948
     - 208.37
   Abundance:
-    - 6.17e-2   
+    - 6.17e-2
     - 10.36e-2
-    
+
 Lu-177 Betij Tank:
   labda [s^-1]: 1.2e-6
-  Energy [keV]:    
-    - 112.948 
+  Energy [keV]:
+    - 112.948
     - 208.37
   Abundance:
     - 0.0028
     - 0.0056
-  
+
 I-131:
   h(10) [uSv/h per MBq/m^2]:  0.066
   labda [s^-1]: 1.0e-6
-  Energy [keV]: 
-#    - 80.185 
+  Energy [keV]:
+#    - 80.185
 #    - 284.305
     - 364.489
     - 636.989
@@ -35,8 +35,8 @@ I-131:
 I-131 Body:
   h(10) [uSv/h per MBq/m^2]:  0.034
   labda [s^-1]: 1.0e-6
-  Energy [keV]: 
-#    - 80.185 
+  Energy [keV]:
+#    - 80.185
 #    - 284.305
     - 364.489
     - 636.989
@@ -50,8 +50,8 @@ I-131 Body:
 I-131 Thyroid:
   h(10) [uSv/h per MBq/m^2]:  0.045
   labda [s^-1]: 1.0e-6
-  Energy [keV]: 
-#    - 80.185 
+  Energy [keV]:
+#    - 80.185
 #    - 284.305
     - 364.489
     - 636.989
@@ -64,8 +64,8 @@ I-131 Thyroid:
  #   - 1.77e-2
 I-131 Betij Tank:
   labda [s^-1]: 1.0e-6
-  Energy [keV]: 
-#    - 80.185 
+  Energy [keV]:
+#    - 80.185
 #    - 284.305
     - 364.489
     - 636.989
@@ -73,28 +73,31 @@ I-131 Betij Tank:
   Abundance:
     - 0.057
     - 0.0062
-    
+
 
 F-18:
   h(10) [uSv/h per MBq/m^2]: 0.166
-  labda [s^-1]: 6.582e3
-  Energy [keV]: 
+  labda [s^-1]: 1.05e-4
+  Energy [keV]:
     - 511
   Abundance:
     - 2
-Tc-99m:
-  h(10) [uSv/h per MBq/m^2]: 0.166
-  labda [s^-1]: 6.582e3
-  Energy [keV]: 
+
+F-18 Patient:
+  h(10) [uSv/h per MBq/m^2]: 0.092
+  labda [s^-1]: 1.05e-4
+  Energy [keV]:
     - 511
   Abundance:
-    - 2
-      
-    
+    - 1.11  # 2 * (0.092 / 0.166)
+
+
+
+
 Ga-68:
   h(10) [uSv/h per MBq/m^2]: 0.16
   labda [s^-1]: 2.79e-8
-  Energy [keV]: 
+  Energy [keV]:
     - 511
     - 1077
   Abundance:
@@ -112,7 +115,7 @@ Ga-68:
 Ge-68 Generator:
   h(10) [uSv/h per MBq/m^2]: 0.028
   labda [s^-1]: 2.79e-8
-  Energy [keV]: 
+  Energy [keV]:
     - 511
     - 1077
   Abundance:

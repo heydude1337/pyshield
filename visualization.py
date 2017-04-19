@@ -8,308 +8,424 @@ config file are shown as well.
 Last Updated 05-02-2016
 """
 
+import yaml
+import numpy as np
+import pickle
 import pyshield
+import traceback
 from matplotlib import pyplot as plt
-from pyshield import const, prefs, data, log
-#from pyshield.run import run_with_configuration
-from pyshield.resources import resources
-from pyshield.calculations.isotope import equivalent_activity
 from os.path import join
 from os import makedirs
 from datetime import datetime
-import pickle
-import numpy as np
 
-SOURCE = 'Source'
-SHIELDING = 'Shielding'
-SHOW_POINTS = False
+from pyshield import CONST, get_setting, log
+from pyshield.resources import RESOURCES
+from pyshield.calculations.isotope import equivalent_activity
 
-# Visualisation options
+# Default Visualisation options
 WALL_COLOR            = 'b'
 WALL_LINE_STYLE       = '-'
-WALL_THICKNESS_SCALE  = 0.05
+WALL_THICKNESS_SCALE  = 0.1
 SOURCE_COLOR          = 'r'
 SOURCE_SHAPE          = 'o'
 LEGEND_LOCATION       = 4
 POINT_COLOR           = 'b'
 POINT_SHAPE           = 'o'
+LABEL_TEXT_SIZE       = 10
+
 
 def sum_dose_maps(dose_maps):
-  dose_maps=np.stack(dose_maps)
-  print(dose_maps.shape)
-  return np.nansum(dose_maps, axis = 0)
+    """ sum a collection of dose maps to obtain the total dose """
+    log.debug('Summing %s dose_maps', len(dose_maps))
 
-def show_floorplan():
+    dose_maps = np.stack(dose_maps)
+    return np.nansum(dose_maps, axis=0)
 
-  """ Show shielding barriers on top of floor plan. """
 
-  log.debug('Loading floor_plan')
-  if const.FLOOR_PLAN in data.keys():
-    floor_plan = data[const.FLOOR_PLAN]
-  else:
-    log.warning('fLoor_plan not loaded!')
+def barrier_color(barrier):
+    """ Determine color for barrier (lookup in the materials colors dict) """
 
-  try:
-    shielding=   data[const.SHIELDING]
-  except:
-    shielding = {}
-  try:
-    sources=     data[const.SOURCES]
-  except:
-    sources = {}
-  try:
-    points =     data[const.XY]
-  except:
-    points = {}
+    colors    = get_setting(CONST.MATERIAL_COLORS)
+    material  = list(barrier[CONST.MATERIAL].keys())[0]
+    thickness = barrier[CONST.MATERIAL][material]
 
-  if points is None:
-    points = {}
+    try:
+        color = colors[material][thickness]
+    except KeyError:
+        color = WALL_COLOR
 
-  #origin = prefs[const.ORIGIN]
-  #scale = data[const.SCALE]
-#  if shielding is None: shielding = {}
-#  if sources is None:   sources = {}
-
-  def shielding_click(name):
-    text = name + ':'
-
-    for material, thickness in shielding[name][const.MATERIAL].items():
-      text += ' '  + material  + ': ' + str(thickness) + 'cm'
-
-    return text
-
-  def source_click(name):
-    text = 'Isotope: {isotope} \n Equivalent Activity: {activity}'
-
-    source = sources[name]
-
-    activity = equivalent_activity(source[const.DESINT], source[const.ISOTOPE])
-    text = text.format(isotope = source[const.ISOTOPE], activity = str(np.round(activity)) + ' MBq')
-    return text
-  def figure_click(event):
-    if event.dblclick:
-      log.info('double click')
-      log.info(str(event))
-      config = {}
-      config = data['run configuration']
-      config[const.CALCULATE] = const.XY
-     
-      config[const.XY] = {'double click': (event.xdata, event.ydata)}
-     
-      result = pyshield.run.run_with_configuration(**config)
-    
-      log.info( 'Finished')
-      
-      print('{0}'.format(result))
-      print('Total Dose: {0}'.format(np.sum(result['Dose [mSv]'])))
-      
-  def object_click(event):
-    """Show information about line with mouse click on the line """
-
-    obj_name = event.artist.name
-
-    if obj_name in shielding.keys():
-      text =  shielding_click(obj_name)
-    elif obj_name in sources.keys():
-      text =  source_click(obj_name)
-    else:
-      raise
-
-    text_label.set_text(text)
-    event.canvas.draw()
-    return True
-
-  def draw_thickness(barrier):
-    """ Barrier thickness weighted by density """
-    d=0
-    for material, thickness in barrier[const.MATERIAL].items():
-      d += (thickness * resources[const.MATERIALS][material][const.DENSITY])
-    return d
-
-  # show floor plan
-  fig=plt.figure()
-  plt.imshow(floor_plan, extent = get_extent(), origin = 'lower')
-  # information text
-  text_label = plt.text(0, 0 , 'Select Line')
-
-  #plot shielding baririers
- # print(scale)
-  for name, barrier in shielding.items():
-    log.debug('drawing {0}'.format(name))
-    l=barrier[const.LOCATION]
-    
-    linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE 
-    linewidth = 5 #hack
-    
-    if const.MATERIAL_COLORS in prefs.keys():
-      colors = data[const.MATERIAL_COLORS]
-      material = list(barrier[const.MATERIAL].keys())[0]
-      thickness = barrier[const.MATERIAL][material]
-      color =  colors[material][thickness]
-                               
-     
-      #color = barrier[const.COLOR]
-      if type(color) in (tuple, list) and len(color) == 3:
+    if type(color) in (tuple, list) and len(color) == 3:
         #rgb color
         color = [c/255 for c in color]
-      #color = WALL_COLOR #HACK
+
+    return color
+
+def calc_dose_at_point(point):
+    """ Calculate the dose at a specific point """
+
+    log.info('Calculate dose at point')
+    config = {}
+
+    if not hasattr(pyshield, 'RUN_CONFIGURATION'):
+        raise RuntimeError
+
+    config = pyshield.RUN_CONFIGURATION
+    config[CONST.CALCULATE] = CONST.POINTS
+    config[CONST.POINTS] = {'double click': {CONST.LOCATION: point}}
+
+    # run all calculations
+    log.debug('Running with config %s', config)
+    result = pyshield.run.run_with_configuration(**config)
+    log.info('Finished')
+
+    return result
+
+def show_floorplan():
+    """ Show shielding barriers on top of floor plan. """
+    #get application data
+    floor_plan = get_setting(CONST.FLOOR_PLAN)
+    shielding  = get_setting(CONST.SHIELDING)
+    sources    = get_setting(CONST.SOURCES)
+    points     = get_setting(CONST.POINTS)
+
+
+
+    #==========================================================================
+    #   Functions to help plotting
+    #==========================================================================
+
+    def shielding_descr(name):
+        """ Return information about shielding when line is clicked """
+        materials = ''
+
+        for material, thickness in shielding[name][CONST.MATERIAL].items():
+            if materials != '':
+                materials += '\n'
+            materials += material  + ': ' + str(thickness) + ' cm'
+
+
+        location = shielding[name][CONST.LOCATION]
+        return (name, materials, location)
+
+    def source_descr(name):
+        """ Return information about source when point is clicked """
+        try:
+          text = 'Isotope: {isotope} \nEquivalent Activity: {activity}'
+          source = sources[name]
+
+          activity = equivalent_activity(source)
+          text = text.format(isotope=source[CONST.ISOTOPE],
+                             activity='{0} MBq'.format(np.round(activity)))
+        except:
+          traceback.print_exc()
+        return name, text
+
+
+    def figure_click(event):
+        """ Calculate dose at mouse position on double click and display. """
+        result = None
+        log.debug('Figure click %s', event)
+        if event.dblclick:
+            log.debug('double click')
+            log.debug(str(event))
+            try:
+                result = calc_dose_at_point((event.xdata, event.ydata))
+            except:
+                print('Error during point calculation!')
+                traceback.print_exc()
+
+            print('{0}'.format(result))
+            print('Total Dose: {0}'.format(np.sum(result[CONST.DOSE_MSV])))
+            result.to_excel('output.xslx')
+        return result
+
+    def object_click(event):
+        """Callback for mouse click on object (source or shielding) """
+
+        obj_name = event.artist.name
+
+        if obj_name in shielding.keys():
+            # shielding item clicked
+            msg = 'Barrier: {0}\nShielding: {1}\nAt location: {2}'
+            print(msg.format(*shielding_descr(obj_name)))
+        elif obj_name in sources.keys():
+            name, text = source_descr(obj_name)
+            print('Source: {0}\n{1}'.format(name, text))
+        else:
+            raise KeyError
+
+
+
+        return True
+
+    def draw_thickness(barrier):
+        """ Barrier thickness weighted by density """
+        d = 0
+        for material, thickness in barrier[CONST.MATERIAL].items():
+            density = RESOURCES[CONST.MATERIALS][material][CONST.DENSITY]
+            d += (thickness * density)
+        return 30 # d
+
+    def draw_barriers(barriers):
+        def draw_barrier(name, barrier):
+
+            log.debug('start drawing %s', name)
+            location = np.array(barrier[CONST.LOCATION])
+
+            linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE
+
+            color = barrier_color(barrier)
+
+
+
+            label = shielding_descr(name)[1]
+            _, labels = plt.gca().get_legend_handles_labels()
+
+            if label in labels:
+                # if label already in the lagend do nat add
+                label = None
+            msg = 'Adding %s with thickness %s and color %s'
+            log.debug(msg, label, linewidth, color)
+
+            l = [[location[0], location[2]], [location[1], location[3]]]
+            log.debug('at location %s', l)
+
+            line = plt.plot(*l,
+                            color     = color,
+                            linestyle = WALL_LINE_STYLE,
+                            linewidth = linewidth,
+                            picker    = linewidth,
+                            label     = label)[0]
+
+            log.debug(line)
+            line.name = name
+            plt.show()
+            return line
+
+        lines = []
+        for name, barrier in barriers.items():
+            line = draw_barrier(name, barrier)
+            lines += [line]
+        return lines
+
+    def draw_points(points):
+        DEFAULT_ALIGNMENT = 'top left'
+
+        def draw_point(name, point, alignment = DEFAULT_ALIGNMENT):
+
+            log.debug('Drawing %s at location %s and alignebt %s', name, point, alignment)
+
+            DELTA = 20
+            offset = np.array((0, 0))
+            ha = 'center'
+            va = 'center'
+            if 'left' in alignment:
+                offset[0] -= DELTA
+                ha = 'right'
+            if 'right' in alignment:
+                offset[0] += DELTA
+                ha = 'left'
+            if 'top' in alignment:
+                offset[1] += DELTA
+                va = 'bottom'
+            if 'bottom' in alignment:
+                offset[1] -= DELTA
+                va = 'top'
+
+            log.debug('Plotting point %s', name)
+            plot_fcn = lambda xy: plt.plot(*xy,
+                                           color  = POINT_COLOR,
+                                           marker = POINT_SHAPE,
+                                           picker = 5)
+            print(point)
+            p = plot_fcn(point)
+            plt.annotate(name, xy=point, xytext = offset,
+                         textcoords='offset points', ha=ha, va=va,
+                         bbox=dict(boxstyle='round,pad=0.5',
+                                   fc='yellow',
+                                   alpha=0.5),
+                         arrowprops=dict(arrowstyle = '->',
+                                         connectionstyle='arc3,rad=0'))
+            return p
+
+        points_drawn = []
+        for name, point in points.items():
+            location = point[CONST.LOCATION]
+            alignment = point.get(CONST.ALIGNMENT, DEFAULT_ALIGNMENT)
+
+
+
+            points_drawn += [draw_point(name, location, alignment)]
+
+        return points_drawn
+
+    def draw_sources(sources):
+        def draw_source(name, source):
+            log.debug('Plotting source %s', name)
+            plot_fcn = lambda xy: plt.plot(*xy,
+                                           color  = SOURCE_COLOR,
+                                           marker = SOURCE_SHAPE,
+                                           picker = 5)
+
+            location = np.array(source[CONST.LOCATION])
+
+            p = plot_fcn(location)[0]
+            p.name = name
+
+            plt.show()
+
+            return p
+
+        points = []
+        for name, source in sources.items():
+            p = draw_source(name, source)
+            points += [p]
+
+        return points
+
+
+    # show floor plan
+    fig = plt.figure()
+    plt.imshow(floor_plan, extent = get_extent(floor_plan), origin = 'lower')
+
+
+
+
+
+    draw_barriers(shielding) # plot shielding baririers
+    draw_sources(sources)    # plot sources
+    draw_points(points)      # points
+    # sort and show legend
+    box = plt.gca().get_position()
+    plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    handles, labels = plt.gca().get_legend_handles_labels()
+
+    # sort both labels and handles by labels
+    if len(handles) > 0:
+        labels, handles = zip(*sorted(zip(labels, handles),
+                                      key=lambda t: t[0]))
+
+        legend = plt.gca().legend(handles,
+                                  labels, loc='center left',
+                                  bbox_to_anchor=(1, 0.5))
+
     else:
-      color = WALL_COLOR
-    if len(barrier[const.MATERIAL]) > 1:
-      label = 'multiple materials'
-    else:
-      material = list(barrier[const.MATERIAL].keys())[0]
-      thickness = float(barrier[const.MATERIAL][material])
-      label = '{0}: {1} cm'.format(material, thickness)
-    
-    _, labels = plt.gca().get_legend_handles_labels()
-    
-    if label in labels:
-      label = None
-    line, = plt.plot((l[0], l[2]), (l[1], l[3]), 
-                      color     = color,
-                      linestyle = WALL_LINE_STYLE,
-                      linewidth = linewidth,
-                      picker    = linewidth,
-                      label = label)
+        legend = None
 
-    line.name = name
+    fig.canvas.mpl_connect('pick_event', object_click)
+    fig.canvas.mpl_connect('button_press_event', figure_click)
 
-  # enable mouse interaction
-
-  # plot red dot at source locations
-
-  for name, source in sources.items():
-    log.debug('Plotting source {0}'.format(name))
-    plot_fcn = lambda xy: plt.plot(*xy, 
-                                   color = SOURCE_COLOR,
-                                   marker = SOURCE_SHAPE,
-                                   picker = 5)
-    
-    location = source[const.LOCATION]
-    if type(location[0]) in (tuple, list):
-      for loc in location:
-        p = plot_fcn(loc)
-        p[0].aname = name
-    else:
-      p = plot_fcn(location)
-      p[0].aname = name
-  
-  
-  for name, point in points.items():
-    point, = plt.plot(*point, 
-                      color =  POINT_COLOR,
-                      marker = POINT_SHAPE,
-                      picker = 5)
-  
-  # sort and show legend
-  box = plt.gca().get_position()
-  plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    return (fig, legend)
 
 
-  
-  
-  handles, labels = plt.gca().get_legend_handles_labels()
-  # sort both labels and handles by labels
-  labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
-  legend = plt.gca().legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
- 
+def plot_dose_map(dose_map=None, legend=None):
+    """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
 
-  fig.canvas.mpl_connect('pick_event', object_click)
-  fig.canvas.mpl_connect('button_press_event', figure_click)
-  return (fig, legend)
+    clim = get_setting(CONST.CLIM_HEATMAP)
+    colormap = get_setting(CONST.COLORMAP)
+    floor_plan = get_setting(CONST.FLOOR_PLAN)
+    iso_contour_values = get_setting(CONST.ISO_VALUES)
+    colors = get_setting(CONST.ISO_COLORS)
+    extent=get_extent(floor_plan)
+
+    log.debug('clims: %s', clim)
+    log.debug('colormap: %s', colormap)
+
+    log.debug('loading floor_plan')
+    fig, legend = show_floorplan()
+    log.debug('floor_plan loaded')
 
 
-def plot_dose_map(floorplan, dose_map=None, legend = None):
-  """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
+    # show heatmap
+    plt.imshow(dose_map,
+               extent   = get_extent(floor_plan),
+               origin   = 'lower',
+               alpha    = 0.5,
+               clim     = clim,
+               cmap     = plt.get_cmap(colormap))
 
-  clim = prefs[const.CLIM_HEATMAP]
-  colormap = prefs[const.COLORMAP]
+    # show isocontours
+    log.info('dose_map %s', dose_map.shape)
 
-  log.debug('clims: {0}'.format(clim))
-  log.debug('colormap: {0}'.format(colormap))
+    contour = plt.contour(dose_map, iso_contour_values,
+                          colors= colors, extent=extent)
 
-  log.debug('loading floor_plan')
-  fig, legend =show_floorplan()
-  log.debug('floor_plan loaded')
-  # show heatmap
-  plt.imshow(dose_map, extent=get_extent(),
-             origin = 'lower',
-             alpha = 0.5,
-             clim=clim,
-             cmap=plt.get_cmap(colormap))
+    # show isocontour value in line
+    plt.clabel(contour, inline=1, fontsize=LABEL_TEXT_SIZE)
 
-  # show isocontours
-  C=plt.contour(dose_map, prefs[const.ISO_VALUES],
-                colors=prefs[const.ISO_COLORS],
-                extent=get_extent())
+    # show legend for isocontours
+    legend_labels = [str(value) + ' mSv' for value in iso_contour_values]
 
-  # show isocontour value in line
-  plt.clabel(C, inline=1, fontsize=10)
-
-  # show legend for isocontours
-  legend_labels = [str(value) + ' mSv' for value in prefs[const.ISO_VALUES]]
-  plt.legend(C.collections, legend_labels, loc=LEGEND_LOCATION)
-  plt.gca().add_artist(legend)
-  return fig
+    plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
+    plt.gca().add_artist(legend)
+    return fig
 
 
 def show(results = None):
-  
-  log.debug('{0} dosem_maps loaded for visualization'.format(len(results)))
-  log.debug('Showing {0} dose_maps'.format(prefs[const.SHOW]))
-  
-  
-  
-  if results is None:
-    fig, legend = show_floorplan()
-    return 
-    
-  def plot(dose_map, p = None, title = ''):
-    figure= plot_dose_map(data[const.FLOOR_PLAN], dose_map)
-    
-    figure.canvas.set_window_title(title)
-    plt.gca().set_title(title)
-    maximize_window()
-    if SHOW_POINTS:
-        for pi in p:
-            plt.plot(*pi,'go')
-    return #figure
-  
-    """ show a dictonary with dosemaps on top of the floor plan and
-      save to disk. """
-  figures={}
-  # show and save all figures it config property is set to show all
-  if prefs[const.SHOW].lower() == 'all':
-    for key, dose_map in results.items():
-      #points, grid, dose_map = result
-      figures[key] = plot(dose_map,  title = key)
-  
-  if prefs[const.SHOW] in ('all', 'sum'):
-      
-      #points = np.concatenate([result[0] for result in results.values()])      
-      plot(sum_dose_maps(results.values()), title = 'sum')
-  
-  return figures
+    """ Show dose maps, shielding, sources and isocontours as specified in the
+    application settings."""
+
+    show_setting = get_setting(CONST.SHOW).lower()
+    log.debug('%s dosem_maps loaded for visualization', len(results))
+    log.debug('Showing %s dose_maps', show_setting)
+
+    if results is None:
+        fig, _ = show_floorplan()
+        return fig
+
+    def plot(dose_map, title = ''):
+        """ Display a dose map and give figere a title."""
+        try:
+          log.info('plotting %s', title)
+          figure= plot_dose_map(dose_map)
+        except:
+          log.error('failed plotting %s', title)
+          traceback.print_exc()
+          return None
+        figure.canvas.set_window_title(title)
+        plt.gca().set_title(title)
+        maximize_window()
+
+        return figure
+
+    figures={}
+    # show and save all figures it config property is set to show all
+    if show_setting == 'all':
+        for key, dose_map in results.items():
+
+            figures[key] = plot(dose_map,  title = key)
+
+    if show_setting in ('all', 'sum'):
+
+        #points = np.concatenate([result[0] for result in results.values()])
+        plot(sum_dose_maps(results.values()), title = 'sum')
+
+    return figures
 
 def save(figures = None, dose_maps = None):
-  makedirs(prefs[const.EXPORT_DIR], exist_ok=True)
+    """ Save figures/dose maps to disk. Export dir is defined in application
+        settings."""
+    export_dir = get_setting(CONST.EXPORT_DIR)
+    save_images = get_setting(CONST.SAVE_IMAGES)
+    export_data = get_setting(CONST.SAVE_DATA)
+    export_file_name = get_setting(CONST.EXPORT_FNAME)
+    makedirs(export_dir, exist_ok=True)
 
-  if prefs[const.SAVE_IMAGES]:
-    for name, figure in figures.items():
-      save_figure(figure, name.lower())
+    if save_images:
+        for name, figure in figures.items():
+            save_figure(figure, name.lower())
 
 
-  if dose_maps is not None and prefs[const.SAVE_DATA]:
-    fname = prefs[const.EXPORT_RAW_FNAME]
-    if '{time_stamp}' in fname:
-      time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
-      fname = fname.format(time_stamp = time_stamp)
+    if dose_maps is not None and export_data:
+        if '{time_stamp}' in export_file_name:
+            time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
+            export_file_name = export_file_name.format(time_stamp = time_stamp)
 
-    fname = join(prefs[const.EXPORT_DIR], fname)
-    log.debug('Pickle dumping data: ' + fname)
-    pickle.dump(dose_maps, open(fname, 'wb'))
-    log.debug('results dumped to file: ' + fname)
+        export_file_name = join(export_dir, export_file_name)
+
+        log.debug('Pickle dumping data: ' + export_file_name)
+        pickle.dump(dose_maps, open(export_file_name, 'wb'))
+        log.debug('results dumped to file: ' + export_file_name)
 
 
 def maximize_window():
@@ -319,65 +435,134 @@ def maximize_window():
 
     # Maximization depends on matplotlib backend
     if backend in ( 'Qt4Agg', 'Qt5Agg'):
-      mng.window.showMaximized()
+        mng.window.showMaximized()
     elif backend == 'wxAgg':
-      mng.frame.Maximize(True)
+        mng.frame.Maximize(True)
     elif backend == 'TkAgg':
-      mng.window.state('zoomed')
+        mng.window.state('zoomed')
     elif backend == 'MacOSX':
-      mng.full_screen_toggle()
+        mng.full_screen_toggle()
     else:
-      log.warn('Cannot maximize a pyplot figure that uses ' + backend + ' as backend')
+        msg = 'Cannot maximize a pyplot figure that uses %s as backend'
+        log.warn(msg, backend)
     return
-def get_extent():
-  floorplan = data[const.FLOOR_PLAN]
-  origin = data[const.ORIGIN]
-  scale = data[const.SCALE]
-  extent_pixels = (0.5 , floorplan.shape[1]-0.5,
-                    0.5, floorplan.shape[0]-0.5)
-  extent_cm = (extent_pixels[0]*scale - origin[0],
-               extent_pixels[1]*scale - origin[0],
-               extent_pixels[2]*scale - origin[1],
-               extent_pixels[3]*scale - origin[1])
 
-  return extent_cm
+
+def get_extent(floorplan):
+    """ Return boundaries of the image in physical coordinates """
+
+    origin = get_setting(CONST.ORIGIN)
+    scale = get_setting(CONST.SCALE)
+
+
+    extent_pixels = (0.5 , floorplan.shape[1]-0.5,
+                      0.5, floorplan.shape[0]-0.5)
+    extent_cm = (extent_pixels[0]*scale - origin[0],
+                 extent_pixels[1]*scale - origin[0],
+                 extent_pixels[2]*scale - origin[1],
+                 extent_pixels[3]*scale - origin[1])
+
+    return extent_cm
 
 def save_figure(fig, source_name):
-  """ save specifed figure to disk, file name gets a time stamp appended"""
+    """ save specifed figure to disk, file name gets a time stamp appended"""
 
-  fname = prefs[const.EXPORT_FIG_FNAME]
-  if '{time_stamp}' and '{source_name}' in fname:
-    time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
-    fname = fname.format(time_stamp = time_stamp, source_name = source_name)
-  else:
-      log.error('Invalid filename: ' + fname)
+    fname = get_setting(CONST.EXPORT_FNAME)
+    export_dir = get_setting(CONST.EXPORT_DIR)
+    dpi = get_setting(CONST.IMAGE_DPI)
 
-  fname = join(prefs[const.EXPORT][const.EXPORT_DIR], fname)
-  dpi = prefs[const.EXPORT][const.DPI]
-  log.debug('Writing: ' + fname)
-  fig.savefig(fname, dpi=dpi, bbox_inches='tight')
+    if '{time_stamp}' and '{source_name}' in fname:
+        time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
+        fname = fname.format(time_stamp = time_stamp,
+                             source_name = source_name)
+    else:
+        log.error('Invalid filename: ' + fname)
 
-def cursor(fig = None, npoints = 2, name = '', shielding = {'Lead': 1}):
-  
+    fname = join(get_setting(export_dir, fname))
+
+    log.debug('Writing: ' + fname)
+    fig.savefig(fname, dpi=dpi, bbox_inches='tight')
+
+def cursor(name = '', shielding = None, fig = None, npoints = 2):
+    if shielding is None:
+        shielding = {'Lead': 1}
+
     if fig is None:
         fig = plt.gcf()
-    p = fig.ginput(npoints)
-    p = np.round(p)
-    
-    
-    entry = '{name}:\n  Location [cm]:\n    - {x1}\n    - {y1}\n    - {x2}\n    - {y2}\n'
-    shielding_entry = '  ' + const.MATERIAL + ':'
-    for material, thickness in shielding.items():
-      shielding_entry +='\n    {0}: {1}'.format(material, thickness)
-    wall = entry.format(name = name, 
-                 x1 = p[0,0],
-                 y1 = p[0,1],
-                 x2 = p[1,0],
-                 y2 = p[1,1])
-    wall += shielding_entry
-    print(wall)
-    
-    return p
+
+    points = fig.ginput(npoints)
+    points = np.round(points)
+
+
+    walls = {}
+
+    for i in range(0, len(points)-1):
+      wall = {}
+      wall[CONST.LOCATION] = list(points[i]) + list(points[i+1])
+      wall[CONST.SHIELDING] = shielding
+      walls[name + str(i)] = wall
+
+    print(yaml.dump(walls, default_flow_style = False))
+
+    return walls
+
+
+def point(index = 0, fig = None, npoints = 1,
+          occupancy_factor = 1, alignment = 'top left'):
+
+    p=np.round(plt.ginput(npoints))
+    points = {}
+    for i, pi in enumerate(p):
+      pname = str(index + i)
+      points[pname] = {CONST.LOCATION:          [float(pi[0]), float(pi[1])],
+                       CONST.OCCUPANCY_FACTOR:  occupancy_factor,
+                       CONST.ALIGNMENT:          alignment}
+
+    print(yaml.dump(points))
+    return points
+
+def print_dose_report(pandas_table):
+  RED = 31
+  #BLACK = 30
+  BLUE = 34
+  GREEN = 32
+
+  #ANSI CODE for colors
+  colors = "\x1b[1;{color}m"
+  end_color = "\x1b[0m"
+
+
+
+  # tabulated output
+  output = '{:<15}' * 4
+
+  # table header
+  print(output.format('point name',
+                      CONST.DOSE_MSV,
+                      CONST.DOSE_OCCUPANCY_MSV,
+                      CONST.OCCUPANCY_FACTOR))
+
+  # iterate over table and select color based on tresholds
+  for row in pandas_table.iterrows():
+
+    index, data = row
+    if data[CONST.DOSE_OCCUPANCY_MSV] > 0.3:
+      color = colors.format(color = RED)
+    elif data[CONST.DOSE_OCCUPANCY_MSV] > 0.1:
+      color = colors.format(color = BLUE)
+    else:
+      color = colors.format(color = GREEN)
+
+    # get values for output
+    name = index
+    dose = np.round(data[CONST.DOSE_MSV], decimals=2)
+    corrected_dose = np.round(data[CONST.DOSE_OCCUPANCY_MSV], decimals = 2)
+    occupancy = data[CONST.OCCUPANCY_FACTOR]
+
+    msg =  output.format(name, dose, corrected_dose, occupancy)
+
+    print(color + msg  + end_color)
+
 
 
 

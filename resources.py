@@ -1,58 +1,59 @@
+""" Functions to read resource files (.yml, .xls/.xlsx and images) """
+
 # -*- coding: utf-8 -*-
-from pyshield import __pkg_root__, const, log
-from pyshield.yaml_wrap import yaml_wrap
+
 from os.path import join, splitext
 import pandas as pd
-
 import matplotlib.image as mpimg
 import numpy as np
 
-def read_resources(files = None):
-  # read resource files either yaml or in excel format for buildup
-  data={}
-  resource_dir = join(__pkg_root__ ,'resources')
+from pyshield import __pkg_root__, CONST, log
+from pyshield.yaml_wrap import yaml_wrap
 
-  files = dict([(key,join(resource_dir,file)) for key, file in files.items()])
+VALID_EXTENSIONS = ('.yml', '.yaml', 'xls', 'xlsx',
+                    'png', 'jpeg', 'jpg', 'bmp')
 
-  for key, file in files.items():
-    data[key] = read_resource(file)
+def is_valid_resource_file(file):
+  valid = False
+  for ext in VALID_EXTENSIONS:
+    if type(file) is str and file.endswith(ext):
+      valid = True
+  return valid
 
-#  if const.BUILDUP in data.keys():
-#    data[const.BUILDUP] = format_buildup_data(data[const.BUILDUP])
+def read_resources(files=None):
+    """ read file as resource and add to pyshield data """
+    # read resource files either yaml or in excel format for buildup
+    data = {}
+    resource_dir = join(__pkg_root__, 'resources')
 
-  return data
+    files = dict([(key, join(resource_dir, file)) for key, file in files.items()])
+
+    for key, file in files.items():
+        data[key] = read_resource(file)
+    return data
 
 def read_resource(file):
-  if type(file) not in (str,):
-    raise TypeError
-  log.debug('Loading: {0}'.format(file))
-  ext = splitext(file)[1].lower()
-   
-  if ext in ('.yml','.yaml'):
-    log.debug('reading yaml')
-    data=yaml_wrap.read_yaml(file)
-  elif ext in ('.xls', '.xlsx'):
-    log.debug('reading xml')
-    data=pd.read_excel(file, sheetname = None)  # read all sheets
-  elif ext in ('.png', '.jpeg', '.jpg', '.bmp'):
-    log.debug('reading image')
-    data=np.flipud(mpimg.imread(file))
-  else:    
-    raise TypeError
-  return data
+    """ read file from disk (.yml, .xls/.xlsx and images) """
+    if not(is_valid_resource_file(file)):
+      print('Cannot read {0}'.format(file))
+      raise(TypeError)
 
+    log.debug('Loading: %s', file)
+    ext = splitext(file)[1].lower()
 
-#def format_buildup_data(data):
-#  for material in data.keys():
-#    data[material] = excel_import.parse_sheet_data(
-#                                data[material],
-#                                row_column_header=0,
-#                                column_row_header=0,
-#                                row_name = const.MFP,
-#                                column_name = const.ENERGY,
-#                                data_name = const.BUILDUP_FACTORS)
-#  return data
+    if ext in ('.yml', '.yaml'):
+        log.debug('reading yaml')
+        data = yaml_wrap.read_yaml(file)
+    elif ext in ('.xls', '.xlsx'):
+        log.debug('reading xml')
+        data = pd.read_excel(file, sheetname=None)  # read all sheets
+    elif ext in ('.png', '.jpeg', '.jpg', '.bmp'):
+        log.debug('reading image')
+        data = np.flipud(mpimg.imread(file))
+    else:
+        raise TypeError
+    return data
 
 #resource files are defined in the yml file in the package root
-resource_files = yaml_wrap.read_yaml(join(__pkg_root__, const.RESOURCE_FILE))
-resources = read_resources(resource_files)
+RESOURCE_FILES = yaml_wrap.read_yaml(join(__pkg_root__, CONST.RESOURCE_FILE))
+RESOURCES = read_resources(RESOURCE_FILES)

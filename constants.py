@@ -7,7 +7,7 @@ RESOURCE_FILE =         'resources.yml'
 
 SUM_SOURCES =           'sum_sources'
 
-
+RUN_CONFIGURATION = 'run_configuration'
 
 #==============================================================================
 # Resources
@@ -40,6 +40,11 @@ MASS_ATTENUATION =      'mu/p [cm^2/g]'
 #-----------------------------------------------------------------------------
 
 
+POLAR =                 'polar'
+CARTESIAN =             'cartesian'
+
+LOG_INFO =              'info'
+LOG_DEBUG =             'debug'
 
 #==============================================================================
 # commandline arguments
@@ -49,18 +54,19 @@ MASS_ATTENUATION =      'mu/p [cm^2/g]'
 SOURCES =               'source_file'
 SHIELDING =             'shielding_file'
 FLOOR_PLAN =            'floor_plan'
-XY =                    'points'
+POINTS =                'dose_points_file'
 MATERIAL_COLORS =       'material colors'
+
 #PREFERENCES = 'preferences'
 AREA =                  'area'
 SCALE =                 'scale'
 ORIGIN =                'origin'
 EXPORT_DIR =            'export_dir'
-GRID =                  'grid'
-POLAR =                 'polar'
+
 RMIN =                  'rmin'
 NANGLES =               'number_of_angles'
-CARTESIAN =             'cartesian'
+
+GRID =                  'grid'
 GRIDSIZE =              'grid_size'
 
 PYTHAGORAS =            'pythagoras'
@@ -81,9 +87,9 @@ IMAGE_DPI =             'image_dpi'
 CALCULATE =             'calculate'
 
 LOG =                   'log'
-LOG_INFO =              'info'
-LOG_DEBUG =             'debug'
+
 AUDIT =                 'audit'
+EXPORT_FNAME =          'dose_map'
 
 
 #----------------------Sources file-------------------------------------------
@@ -101,7 +107,6 @@ BODY =                'Body'
 HEAD =                'Head'
 KVP =                 'kVp'
 DLP =                 'Average DLP'
-NUMBER_EXAMS =        'Number of exams'
 XRAY_SECONDARY =      'X-ray secundary'
 NUMBER_OF_EXAMS =     'Number of exams'
 #-----------------------------------------------------------------------------
@@ -115,6 +120,12 @@ FLOOR =               'floor'
 HEIGHT =              'height'
 #-----------------------------------------------------------------------------
 
+#----------------------Points file--------------------------------------------
+OCCUPANCY_FACTOR = 'OCCUPANCY_FACTOR'
+ALIGNMENT        = 'ALIGNMENT'
+
+#-----------------------------------------------------------------------------
+
 
 #----------------------Audit keys  -------------------------------------------
 ASOURCE =                 'source name'
@@ -126,8 +137,66 @@ ADIST_METERS =            'Distance in meters'
 ASCALE =                  'Scale Factor in cm/pixel'
 AATTENUATION =            'Total attenuation'
 DOSE_MSV =                'Dose [mSv]'
+DOSE_OCCUPANCY_MSV =      'Dose corrected for occupancy [mSv]'
 
 
+
+CONST = (DEF_PREFERENCE_FILE,
+         RESOURCE_FILE,
+         SUM_SOURCES,
+         MATERIALS,
+         XRAY_SHIELDING,
+         ISOTOPES,
+         BUILDUP,
+         ATTENUATION,
+         DENSITY,
+         H10,
+         LABDA,
+         HALF_VALUE_THICKNESS,
+         ABUNDANCE,
+         ENERGY_keV,
+         ENERGY_MeV,
+         MASS_ATTENUATION,
+         GRID,
+         POLAR,
+         LOG_INFO,
+         LOG_DEBUG,
+         # source file
+         ISOTOPE,
+         DESINT,
+         ACTIVITY,
+         DURATION,
+         TIMES_PER_YEAR,
+         ACTIVITY_H,
+         DECAY_CORRECTION,
+         TYPE,
+         EXAM,
+         BODY,
+         HEAD,
+         KVP,
+         DLP,
+         XRAY_SECONDARY,
+         NUMBER_OF_EXAMS,
+         # shielding file
+         LOCATION,
+         MATERIAL,
+         COLOR,
+         FLOOR,
+         HEIGHT,
+         #audit
+         ASOURCE,
+         ALOC_SOURCE,
+         APOINT,
+         ALOC_POINT,
+         ASHIELDING_MATERIALS_CM,
+         ADIST_METERS,
+         ASCALE,
+         AATTENUATION,
+         DOSE_MSV,
+         # points file
+         OCCUPANCY_FACTOR,
+         POINTS,
+         DOSE_OCCUPANCY_MSV)
 
 
 
