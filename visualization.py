@@ -314,7 +314,7 @@ def show_floorplan():
 
     fig.canvas.mpl_connect('pick_event', object_click)
     fig.canvas.mpl_connect('button_press_event', figure_click)
-
+    maximize_window()
     return (fig, legend)
 
 
@@ -358,10 +358,10 @@ def plot_dose_map(dose_map=None, legend=None):
 
     plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
     plt.gca().add_artist(legend)
-    return fig
+    return fig, None
 
 
-def show(results = None):
+def show(results = {}):
     """ Show dose maps, shielding, sources and isocontours as specified in the
     application settings."""
 
@@ -369,19 +369,23 @@ def show(results = None):
     log.debug('%s dosem_maps loaded for visualization', len(results))
     log.debug('Showing %s dose_maps', show_setting)
 
-    if results is None:
+    if show_setting not in ('all', 'sum'):
+      return None
+
+    if len(results) == 0 or results[CONST.DOSE_MAPS] is None:
         fig, _ = show_floorplan()
-        return fig
+        return {CONST.FLOOR_PLAN: fig}
 
     def plot(dose_map, title = ''):
         """ Display a dose map and give figere a title."""
         try:
           log.info('plotting %s', title)
-          figure= plot_dose_map(dose_map)
+          figure, _ = plot_dose_map(dose_map)
         except:
           log.error('failed plotting %s', title)
           traceback.print_exc()
           return None
+
         figure.canvas.set_window_title(title)
         plt.gca().set_title(title)
         maximize_window()
@@ -391,14 +395,14 @@ def show(results = None):
     figures={}
     # show and save all figures it config property is set to show all
     if show_setting == 'all':
-        for key, dose_map in results.items():
-
+        for key, dose_map in results[CONST.DOSE_MAPS].items():
+            print(key)
             figures[key] = plot(dose_map,  title = key)
 
     if show_setting in ('all', 'sum'):
-
         #points = np.concatenate([result[0] for result in results.values()])
-        plot(sum_dose_maps(results.values()), title = 'sum')
+        figures['sum'] = plot(sum_dose_maps(results[CONST.DOSE_MAPS].values()),
+                                            title = 'sum')
 
     return figures
 
@@ -498,8 +502,9 @@ def cursor(name = '', shielding = None, fig = None, npoints = 2):
 
     for i in range(0, len(points)-1):
       wall = {}
-      wall[CONST.LOCATION] = list(points[i]) + list(points[i+1])
-      wall[CONST.SHIELDING] = shielding
+      loc = list(points[i]) + list(points[i+1])
+      wall[CONST.LOCATION] = [float(np.round(li)) for li in loc]
+      wall[CONST.MATERIAL] = shielding.copy()
       walls[name + str(i)] = wall
 
     print(yaml.dump(walls, default_flow_style = False))
@@ -507,13 +512,13 @@ def cursor(name = '', shielding = None, fig = None, npoints = 2):
     return walls
 
 
-def point(index = 0, fig = None, npoints = 1,
+def point(name = '', fig = None, npoints = 1,
           occupancy_factor = 1, alignment = 'top left'):
 
     p=np.round(plt.ginput(npoints))
     points = {}
     for i, pi in enumerate(p):
-      pname = str(index + i)
+      pname = name + str(i + 1)
       points[pname] = {CONST.LOCATION:          [float(pi[0]), float(pi[1])],
                        CONST.OCCUPANCY_FACTOR:  occupancy_factor,
                        CONST.ALIGNMENT:          alignment}

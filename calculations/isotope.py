@@ -7,7 +7,7 @@ Last Updated 05-02-2016
 import numpy as np
 import scipy.interpolate as interp
 from pyshield import CONST, log
-from pyshield.calculations.barrier import sum_shielding_line
+from pyshield.calculations.barrier import sum_shielding_line, add_barriers
 from pyshield.resources import RESOURCES
 from pyshield.calculations.dose_rates import H10
 
@@ -85,7 +85,8 @@ def equivalent_activity(source):
 
 def calc_dose_source_at_location(source, location, shielding,
                                  height = 0, disable_buildup = False,
-                                 pythagoras = True, table=None):
+                                 pythagoras = True, return_details = False,
+                                 floor = {}):
 
     """" Calculates the dose that will be measured in location given a source
     specified by source and a shielding specified by shielding.
@@ -122,7 +123,7 @@ def calc_dose_source_at_location(source, location, shielding,
 
     #include shielding from source
     sum_shielding = {**sum_shielding, **source.get(CONST.MATERIAL,{})}
-
+    sum_shielding = add_barriers(sum_shielding, floor)
 #    if get_setting(CONST.LOG) == CONST.LOG_DEBUG:
 #        msg = 'Source shielded with material: %s and thickness: %s'
 #        for material, thickness in sum_shielding.items():
@@ -141,20 +142,26 @@ def calc_dose_source_at_location(source, location, shielding,
 
     log.debug('height: %s | h10: %s | dose_mSv: %s', height, h10, dose_mSv)
     # add calculations details to a table if one was passed to this function
-    if table is not None:
+    if return_details:
+        details = {}
         #disable_buidup = get_setting(CONST.DISABLE_BUILDUP)
 
-        table[CONST.ALOC_SOURCE]              = [source_location]
-        table[CONST.ALOC_POINT]               = [location]
+        details[CONST.ALOC_SOURCE]              = source_location
+        details[CONST.ALOC_POINT]               = location
+        details[CONST.DISABLE_BUILDUP]          = disable_buildup
+        details[CONST.ISOTOPE]                  = isotope
+        details[CONST.ACTIVITY_H]               = A_eff
+        details[CONST.H10]                      = h10
+        details[CONST.ASHIELDING_MATERIALS_CM]  = str(sum_shielding)
+        details[CONST.ADIST_METERS]             = d_meters
+        details['Dose [mSv] per Energy']        = dose_mSv
+        details[CONST.DOSE_MSV]                 = np.sum(dose_mSv)
+        details[CONST.PYTHAGORAS]               = pythagoras
+        details[CONST.HEIGHT]                   = height
 
-        table[CONST.DISABLE_BUILDUP]          = disable_buildup
-        table[CONST.ISOTOPE]                  = [isotope]
-        table[CONST.ACTIVITY_H]               = [A_eff]
-        table[CONST.H10]                      = [h10]
-        table[CONST.ASHIELDING_MATERIALS_CM]  = [str(sum_shielding)]
-        table[CONST.ADIST_METERS]             = [d_meters]
+        return details
 
-    return dose_mSv
+    return np.sum(dose_mSv)
 
 def dose_rate(sum_shielding, isotope, disable_buildup = False):
     """
@@ -175,7 +182,7 @@ def dose_rate(sum_shielding, isotope, disable_buildup = False):
     log.debug('energies: %s', energies)
     log.debug('abundance: %s', abundance)
 
-    rate = H10(energy_keV=energies, abundance=t * np.array(abundance))
+    rate = H10(energy_keV=energies, abundance=t * np.array(abundance), add = False)
 
     return rate
 

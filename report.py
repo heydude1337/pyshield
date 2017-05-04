@@ -1,30 +1,81 @@
 # -*- coding: utf-8 -*-
-tbl = result[1]
-tbl = tbl.round({'Dose [mSv]': 2, 'Dose corrected for occupancy [mSv]': 2})
-
-
-tbl['point name'] = tbl.index
-
-tbl.sort(columns = 'point name')
-title = 'Pyshield Report'
-file_name = 'report.pdf'
+from pyshield import CONST
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import  A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, PageBreak, Image, Paragraph
 from reportlab.pdfgen import canvas
-doc = SimpleDocTemplate("simple_table.pdf", pagesize=A4)
-elements = []
-
-#c = canvas.canvas(file_name, pagesize = A4)
-
-#c = c.drawString(100, 100, title)
+from reportlab.lib.styles import getSampleStyleSheet
+#from reportlab.lib.utils import ImageReader
+from io import BytesIO
+import re
 
 
-list_tbl = [tbl.columns[:,].values.astype(str).tolist()] + tbl.values.tolist()
+def naturallysorted(L, reverse=False):
+  """ Similar functionality to sorted() except it does a natural text sort
+  which is what humans expect when they see a filename list.
+  """
+  convert = lambda text: ("", int(text)) if text.isdigit() else (text, 0)
+  alphanum = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
+  return sorted(L, key=alphanum, reverse=reverse)
 
-pdf_tbl = Table(list_tbl)
+def pd_to_list(pd_frame):
+  lst = [pd_frame.columns[:,].values.astype(str).tolist()] + pd_frame.values.tolist()
+  return lst
 
-elements.append(pdf_tbl)
 
-doc.build(elements)
+def make_report(file_name, summary_table, mpl_figs, title = 'PyShield Report'):
+  styles = getSampleStyleSheet()
+  title = Paragraph(title, styles["Heading1"])
+
+  # additional editing of the results
+  tbl = summary_table
+  tbl = tbl.round({'Dose [mSv]': 2, 'Dose corrected for occupancy [mSv]': 2})
+  # convert to something reportlab can work with
+
+
+
+
+  doc = SimpleDocTemplate(file_name, pagesize=A4)
+
+  # convert mpl figure to something reportlab can work with
+
+
+
+  lst_tbl = pd_to_list(tbl)
+  pdf_tbl = Table(lst_tbl)
+  pdf_tbl.setStyle(TableStyle(tbl_style(lst_tbl)))
+
+
+
+
+  elements = [title,pdf_tbl, PageBreak()]
+  for fig in mpl_figs.values():
+    image = image_from_mpl_fig(fig)
+    elements += [image, PageBreak()]
+
+  doc.build(elements)
+
+
+
+
+def image_from_mpl_fig(mpl_fig):
+  image_data = BytesIO()
+  mpl_fig.savefig(image_data, format = 'png', dpi = 200)
+  image_data.seek(0)
+  image = Image(image_data)
+  image._restrictSize(*A4)
+  return image
+
+
+def tbl_style(tbl):
+    style = [('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+             ('BOX', (0,0), (-1,-1), 0.25, colors.black)]
+
+
+    for i, row in enumerate(tbl):
+      if i > 0: # ignore headers
+        if row[-1] > 0.3:
+          style.append(('BACKGROUND', (0,i), (-1, i), 'red'))
+        elif row[-1] > 0.1:
+          style.append(('BACKGROUND', (0,i), (-1, i), 'orange'))
+    return style

@@ -93,7 +93,7 @@ def add_floor():
   """ Add shielding to the source to simulate the shielding of the
       ceiling or floor """
   sources         = get_setting(CONST.SOURCES)
-  floor_shielding = get_setting(CONST.FLOOR)
+  floor_shielding = get_setting(CONST.FLOOR)[CONST.MATERIAL]
 
 
   for source in sources.values():

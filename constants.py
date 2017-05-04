@@ -140,6 +140,12 @@ DOSE_MSV =                'Dose [mSv]'
 DOSE_OCCUPANCY_MSV =      'Dose corrected for occupancy [mSv]'
 
 
+#--------------------Result keys-----------------------------------------
+DOSE_MAPS = 'dose_maps'
+FIGURE    = 'figure'
+TABLE     = 'table'
+SUM_TABLE = 'sum_table'
+
 
 CONST = (DEF_PREFERENCE_FILE,
          RESOURCE_FILE,

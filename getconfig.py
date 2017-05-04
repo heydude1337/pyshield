@@ -39,7 +39,8 @@ SETTING_ITEMS =  (CONST.AREA,
                   CONST.FLOOR_PLAN,
                   CONST.MATERIAL_COLORS,
                   CONST.SCALE,
-                  CONST.ORIGIN)
+                  CONST.ORIGIN,
+                  CONST.HEIGHT)
 
 def is_setting(key):
   return key in SETTING_ITEMS
@@ -65,8 +66,12 @@ def get_setting(key = None, default_value = None):
   # get key or predifined default value
 
 
+
   elif key in SETTINGS.keys():
     return SETTINGS[key]
+
+  elif key == CONST.HEIGHT:
+    return 0
 
   elif default_value is not None:
     SETTINGS[key] = default_value

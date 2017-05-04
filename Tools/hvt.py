@@ -26,7 +26,7 @@ def dose(isotope = 'I-131',
                      multiple_cpu     = False,
                      disable_buildup  =  False)
 
-    return dose_table[0][CONST.DOSE_MSV][0]
+    return dose_table[CONST.SUM_TABLE][CONST.DOSE_MSV][0]
 
 
 def shielding_factor(isotope = 'Lu-177', material = 'Lead' , thickness = 1):

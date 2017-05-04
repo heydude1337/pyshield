@@ -18,14 +18,15 @@ def calculate_dose_map_for_source(source):
     configuration (data and prefs) """
 
 
-    log.debug('Material:  %s', source[CONST.MATERIAL])
+    log.debug('Material:  %s', source.get(CONST.MATERIAL, {}))
 
     shielding = get_setting(CONST.SHIELDING)
+    floor = get_setting(CONST.FLOOR)
+    height = get_setting(CONST.HEIGHT)
 
-    try:
-      height = get_setting(CONST.FLOOR)[CONST.HEIGHT]
-    except:
-      height = 0
+
+    height = get_setting(CONST.HEIGHT)
+
 
     disable_buildup = get_setting(CONST.DISABLE_BUILDUP)
     pythagoras = get_setting(CONST.PYTHAGORAS)
@@ -34,9 +35,13 @@ def calculate_dose_map_for_source(source):
         calc_dose = lambda loc: calc_dose_source_at_location(source,
                                                              loc,
                                                              shielding,
-                                                             height,
-                                                             disable_buildup,
-                                                             pythagoras)
+                                                             height = height,
+                                                             disable_buildup = disable_buildup,
+                                                             pythagoras = pythagoras,
+                                                             return_details = False,
+                                                             floor = floor)
+
+
 
     else:
         print('Unknown source type: {0}'.format(source[CONST.TYPE]))
