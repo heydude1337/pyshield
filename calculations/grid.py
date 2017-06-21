@@ -31,7 +31,7 @@ def calculate_dose_map_for_source(source):
     disable_buildup = get_setting(CONST.DISABLE_BUILDUP)
     pythagoras = get_setting(CONST.PYTHAGORAS)
 
-    if source[CONST.TYPE] == CONST.ISOTOPE:
+    if source[CONST.TYPE] == CONST.ISOTOPE or CONST.ISOTOPE in source[CONST.TYPE]:
         calc_dose = lambda loc: calc_dose_source_at_location(source,
                                                              loc,
                                                              shielding,
@@ -152,3 +152,12 @@ def polar_points(r_spacing, n_angles=100, origin=(0, 0), span=(10, 10),
     return points
 
 #
+
+if __name__ == "__main__":
+  import matplotlib.pyplot as plt
+  points = polar_points(1, n_angles = 45, origin = (0,0), span = (100,100))
+  for point in points:
+    plt.plot(*point, 'ro')
+
+
+

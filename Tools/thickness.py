@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from hvt import shielding_factor, shielding_thickness
-
-lead_thickness = [3, 4, 5, 6]
+import numpy as np
+lead_thickness = np.array(range(0, 50))[1:]/10
 
 isotope = 'I-131'
 

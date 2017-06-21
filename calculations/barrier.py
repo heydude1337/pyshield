@@ -28,30 +28,37 @@ def sum_shielding_line(source_location, location, shielding, pythagoras = True):
         """
     # Line between the source location and the specified location
     L0 = np.array((source_location, location))
+    # list of points with intersections
     points = []
+
+    # total amount of shielding between location and   source location
     shielding_line = {}
 
-    #iterate over shielding items, each item has a thickness, material and
-    #location key specyfiying a line element
-    for key, item in shielding.items():
-        log.debug('Intersection %s?', key)
-        location = np.array(item[CONST.LOCATION])
+    #iterate over shielding all defined barriers,
+    for name, barrier in shielding.items():
+        log.debug('Intersection %s?', name)
+        location = np.array(barrier[CONST.LOCATION])
 
 
-        #simple line element
+        #line for barrier
         L1 = np.array((location[0:2], location[2:4]))
 
         #check for intersection
         p = intersect_line(L0, L1)
 
-        #None: no intersection, NaN: parellel lines, no intersection
+
+        # None: no intersection
+        # NaN: parellel lines, no intersection
         # if p already in points list disregard this intersection.
-        #example line ((0,0),(1,0)) and line ((0,0),(0,1)) if there is an
-        #intersection at (0,0) with L0 then only one should count. i.e. the
-        #specifield shielding elements may not overlap!
+        # example line ((0,0),(1,0)) and line ((0,0),(0,1)) if there is an
+        # intersection at (0,0) with another then only one should count. i.e.
+        # the point list should contain unique points
+
+
         if not(None in p) and not(np.NaN in p) and not p in points:
-            points.append(p)
+            points.append(p) # valid intersection at point p
             log.debug('Intersection at: ' + str(p))
+
             # calculate the angle of intersection or assume 90 degrees
             if pythagoras:
                 theta = angle_between_lines(L0, L1)
@@ -60,7 +67,7 @@ def sum_shielding_line(source_location, location, shielding, pythagoras = True):
 
             # Add thickness and material to the sum of the total shielding
             # shielding is summed for each material seperately
-            for material, thickness in item[CONST.MATERIAL].items():
+            for material, thickness in barrier[CONST.MATERIAL].items():
                 # check if material already was found if not so add
                 # material as key
                 if not material in shielding_line.keys():

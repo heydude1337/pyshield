@@ -83,6 +83,20 @@ def equivalent_activity(source):
 
     return eq_activity
 
+
+def avg_distance_line_source(L, d):
+  return  d*np.sqrt(L**2/(4*d**2) + 1)/2 + d**2*np.asinh(L/(2*d))/L
+
+def dose_rate_line_source(length_meters, distance_meters):
+  L = length_meters
+  d = distance_meters
+  return 2  / (L * d) * np.arctan(L / (2 * d))
+
+def dose_rate_point_source(distance_meters):
+  d = distance_meters
+  return 1/d**2
+
+
 def calc_dose_source_at_location(source, location, shielding,
                                  height = 0, disable_buildup = False,
                                  pythagoras = True, return_details = False,
@@ -104,11 +118,6 @@ def calc_dose_source_at_location(source, location, shielding,
     source_location = np.array(source[CONST.LOCATION])
     isotope         = source[CONST.ISOTOPE]
 
-#    try:
-#        height = get_setting(CONST.FLOOR)[CONST.HEIGHT] / 100 # height in meters
-#        log.debug('Floor/ceiling height: %s', height)
-#    except KeyError:
-#        height = 0
 
 
     A_eff = equivalent_activity(source)
@@ -124,21 +133,30 @@ def calc_dose_source_at_location(source, location, shielding,
     #include shielding from source
     sum_shielding = {**sum_shielding, **source.get(CONST.MATERIAL,{})}
     sum_shielding = add_barriers(sum_shielding, floor)
-#    if get_setting(CONST.LOG) == CONST.LOG_DEBUG:
-#        msg = 'Source shielded with material: %s and thickness: %s'
-#        for material, thickness in sum_shielding.items():
-#            log.debug(msg, material, thickness)
 
     h10 = dose_rate(sum_shielding, isotope, disable_buildup)
+
+
 
     d_meters = np.linalg.norm(np.array(source_location) -
                               np.array(location)) / 100
 
-    if height > 0:
-        d_meters = ((d_meters**2 + height**2)**0.5)
+    if CONST.POINT_SOURCE in source.get(CONST.TYPE, [CONST.POINT_SOURCE]):
+        rel_strength = dose_rate_point_source(d_meters + height)
+
+    elif CONST.LINE_SOURCE in source.get(CONST.TYPE, [None]):
+      if height > 0:
+        print('Cannot use height > 0 for line sources')
+        raise NotImplementedError
+
+      rel_strength = dose_rate_line_source(source.get(CONST.LENGTH), d_meters)
+    else:
+      print(source.get(CONST.TYPE, CONST.POINT_SOURCE))
+      raise ValueError
+
 
     # calculate the dose for the location
-    dose_mSv = A_eff * h10 / (d_meters**2) / 1000
+    dose_mSv = A_eff * h10 * rel_strength / 1000
 
     log.debug('height: %s | h10: %s | dose_mSv: %s', height, h10, dose_mSv)
     # add calculations details to a table if one was passed to this function
@@ -146,14 +164,14 @@ def calc_dose_source_at_location(source, location, shielding,
         details = {}
         #disable_buidup = get_setting(CONST.DISABLE_BUILDUP)
 
-        details[CONST.ALOC_SOURCE]              = source_location
-        details[CONST.ALOC_POINT]               = location
+        details[CONST.SOURCE_LOCATION]          = source_location
+        details[CONST.POINT_LOCATION]           = location
         details[CONST.DISABLE_BUILDUP]          = disable_buildup
         details[CONST.ISOTOPE]                  = isotope
         details[CONST.ACTIVITY_H]               = A_eff
         details[CONST.H10]                      = h10
-        details[CONST.ASHIELDING_MATERIALS_CM]  = str(sum_shielding)
-        details[CONST.ADIST_METERS]             = d_meters
+        details[CONST.TOTAL_SHIELDING]          = str(sum_shielding)
+        details[CONST.SOURCE_POINT_DISTANCE]    = d_meters
         details['Dose [mSv] per Energy']        = dose_mSv
         details[CONST.DOSE_MSV]                 = np.sum(dose_mSv)
         details[CONST.PYTHAGORAS]               = pythagoras
@@ -182,7 +200,7 @@ def dose_rate(sum_shielding, isotope, disable_buildup = False):
     log.debug('energies: %s', energies)
     log.debug('abundance: %s', abundance)
 
-    rate = H10(energy_keV=energies, abundance=t * np.array(abundance), add = False)
+    rate = H10(energy_keV=energies, abundance=t * np.array(abundance))
 
     return rate
 

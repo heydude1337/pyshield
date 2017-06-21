@@ -4,7 +4,7 @@ from pyshield.yaml_wrap.yaml_wrap import read_yaml, write_yaml
 
 from pyshield import constants as CONST
 
-from pyshield.documentation import __doc__
+#from pyshield.documentation import __doc__
 
 #__doc__    = pyshield.documentation.__doc__
 __author__ = "Marcel Segbers"
@@ -20,14 +20,22 @@ __pkg_root__ = split(__file__)[0]
 from pyshield.log import log, set_log_level
 
 from pyshield.getconfig import get_setting, set_setting, is_setting
+from pyshield.getconfig import load_default_settings
+load_default_settings()
 
-from pyshield.resources import RESOURCES
 
-from pyshield.resources import read_resource
+from pyshield.resources import read_resources, RESOURCES
+
+
+from pyshield.resources import read_data_file
 
 from pyshield.calculations import *
 
-from pyshield.run  import run_with_configuration
+from pyshield.main  import run_with_configuration as run
+
+from pyshield.Tools.drawing import point, wall
+
+
 
 #from pyshield.errors import *
 

@@ -8,7 +8,6 @@ config file are shown as well.
 Last Updated 05-02-2016
 """
 
-import yaml
 import numpy as np
 import pickle
 import pyshield
@@ -37,7 +36,6 @@ LABEL_TEXT_SIZE       = 10
 def sum_dose_maps(dose_maps):
     """ sum a collection of dose maps to obtain the total dose """
     log.debug('Summing %s dose_maps', len(dose_maps))
-
     dose_maps = np.stack(dose_maps)
     return np.nansum(dose_maps, axis=0)
 
@@ -324,8 +322,8 @@ def plot_dose_map(dose_map=None, legend=None):
     clim = get_setting(CONST.CLIM_HEATMAP)
     colormap = get_setting(CONST.COLORMAP)
     floor_plan = get_setting(CONST.FLOOR_PLAN)
-    iso_contour_values = get_setting(CONST.ISO_VALUES)
-    colors = get_setting(CONST.ISO_COLORS)
+    isocontour_lines = get_setting(CONST.ISOCONTOUR_LINES)
+
     extent=get_extent(floor_plan)
 
     log.debug('clims: %s', clim)
@@ -345,16 +343,25 @@ def plot_dose_map(dose_map=None, legend=None):
                cmap     = plt.get_cmap(colormap))
 
     # show isocontours
-    log.info('dose_map %s', dose_map.shape)
+    log.info('dose_map shape %s', dose_map.shape)
 
-    contour = plt.contour(dose_map, iso_contour_values,
-                          colors= colors, extent=extent)
+    isocontours = np.array(list(isocontour_lines.keys()))
+    isocontour_colors = np.array(list(isocontour_lines.values()))
+
+    isocontour_colors = isocontour_colors[isocontour_colors.argsort()]
+    isocontours.sort()
+
+    log.debug('Isocontours: %s', str(isocontours))
+    log.debug('Isocontour_colors: %s', str(isocontour_colors))
+
+    contour = plt.contour(dose_map, isocontours,
+                          colors=isocontour_colors, extent=extent)
 
     # show isocontour value in line
     plt.clabel(contour, inline=1, fontsize=LABEL_TEXT_SIZE)
 
     # show legend for isocontours
-    legend_labels = [str(value) + ' mSv' for value in iso_contour_values]
+    legend_labels = [str(value) + ' mSv' for value in isocontours]
 
     plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
     plt.gca().add_artist(legend)
@@ -364,15 +371,19 @@ def plot_dose_map(dose_map=None, legend=None):
 def show(results = {}):
     """ Show dose maps, shielding, sources and isocontours as specified in the
     application settings."""
+    dose_maps = results[CONST.DOSE_MAPS]
+
+
 
     show_setting = get_setting(CONST.SHOW).lower()
     log.debug('%s dosem_maps loaded for visualization', len(results))
     log.debug('Showing %s dose_maps', show_setting)
+    figures = None
 
     if show_setting not in ('all', 'sum'):
       return None
 
-    if len(results) == 0 or results[CONST.DOSE_MAPS] is None:
+    if len(results) == 0 or dose_maps is None or len(dose_maps) == 0:
         fig, _ = show_floorplan()
         return {CONST.FLOOR_PLAN: fig}
 
@@ -396,13 +407,10 @@ def show(results = {}):
     # show and save all figures it config property is set to show all
     if show_setting == 'all':
         for key, dose_map in results[CONST.DOSE_MAPS].items():
-            print(key)
             figures[key] = plot(dose_map,  title = key)
 
     if show_setting in ('all', 'sum'):
-        #points = np.concatenate([result[0] for result in results.values()])
-        figures['sum'] = plot(sum_dose_maps(results[CONST.DOSE_MAPS].values()),
-                                            title = 'sum')
+        figures['sum'] = plot(sum_dose_maps(dose_maps.values()), title = 'sum')
 
     return figures
 
@@ -411,25 +419,13 @@ def save(figures = None, dose_maps = None):
         settings."""
     export_dir = get_setting(CONST.EXPORT_DIR)
     save_images = get_setting(CONST.SAVE_IMAGES)
-    export_data = get_setting(CONST.SAVE_DATA)
-    export_file_name = get_setting(CONST.EXPORT_FNAME)
+
     makedirs(export_dir, exist_ok=True)
 
     if save_images:
         for name, figure in figures.items():
-            save_figure(figure, name.lower())
-
-
-    if dose_maps is not None and export_data:
-        if '{time_stamp}' in export_file_name:
-            time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
-            export_file_name = export_file_name.format(time_stamp = time_stamp)
-
-        export_file_name = join(export_dir, export_file_name)
-
-        log.debug('Pickle dumping data: ' + export_file_name)
-        pickle.dump(dose_maps, open(export_file_name, 'wb'))
-        log.debug('results dumped to file: ' + export_file_name)
+            file = join(export_dir, name)
+            save_figure(figure, file)
 
 
 def maximize_window():
@@ -487,44 +483,7 @@ def save_figure(fig, source_name):
     log.debug('Writing: ' + fname)
     fig.savefig(fname, dpi=dpi, bbox_inches='tight')
 
-def cursor(name = '', shielding = None, fig = None, npoints = 2):
-    if shielding is None:
-        shielding = {'Lead': 1}
 
-    if fig is None:
-        fig = plt.gcf()
-
-    points = fig.ginput(npoints)
-    points = np.round(points)
-
-
-    walls = {}
-
-    for i in range(0, len(points)-1):
-      wall = {}
-      loc = list(points[i]) + list(points[i+1])
-      wall[CONST.LOCATION] = [float(np.round(li)) for li in loc]
-      wall[CONST.MATERIAL] = shielding.copy()
-      walls[name + str(i)] = wall
-
-    print(yaml.dump(walls, default_flow_style = False))
-
-    return walls
-
-
-def point(name = '', fig = None, npoints = 1,
-          occupancy_factor = 1, alignment = 'top left'):
-
-    p=np.round(plt.ginput(npoints))
-    points = {}
-    for i, pi in enumerate(p):
-      pname = name + str(i + 1)
-      points[pname] = {CONST.LOCATION:          [float(pi[0]), float(pi[1])],
-                       CONST.OCCUPANCY_FACTOR:  occupancy_factor,
-                       CONST.ALIGNMENT:          alignment}
-
-    print(yaml.dump(points))
-    return points
 
 def print_dose_report(pandas_table):
   RED = 31
@@ -559,7 +518,7 @@ def print_dose_report(pandas_table):
       color = colors.format(color = GREEN)
 
     # get values for output
-    name = index
+    name = data[CONST.POINT_NAME]
     dose = np.round(data[CONST.DOSE_MSV], decimals=2)
     corrected_dose = np.round(data[CONST.DOSE_OCCUPANCY_MSV], decimals = 2)
     occupancy = data[CONST.OCCUPANCY_FACTOR]

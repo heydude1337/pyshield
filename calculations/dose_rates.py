@@ -17,6 +17,9 @@ def ratio_H10_air_kerma(energy_keV):
         + 0.7006 * np.arctan(0.6519 * xi)
     return r
 
+
+
+
 def H10(energy_keV, abundance = 1, add = True):
     """
     Calculates the h10 in uSv/h per MBq/m^2 for given photon energy or

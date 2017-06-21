@@ -23,40 +23,31 @@ def pd_to_list(pd_frame):
   return lst
 
 
-def make_report(file_name, summary_table, mpl_figs, title = 'PyShield Report'):
+def make_report(file_name, calc_results, title = 'PyShield Report'):
+  mpl_figs = calc_results[CONST.FIGURE]
+  tbl = calc_results[CONST.SUM_TABLE]
   styles = getSampleStyleSheet()
   title = Paragraph(title, styles["Heading1"])
 
   # additional editing of the results
-  tbl = summary_table
   tbl = tbl.round({'Dose [mSv]': 2, 'Dose corrected for occupancy [mSv]': 2})
   # convert to something reportlab can work with
-
-
-
 
   doc = SimpleDocTemplate(file_name, pagesize=A4)
 
   # convert mpl figure to something reportlab can work with
-
-
-
   lst_tbl = pd_to_list(tbl)
   pdf_tbl = Table(lst_tbl)
   pdf_tbl.setStyle(TableStyle(tbl_style(lst_tbl)))
 
-
-
-
   elements = [title,pdf_tbl, PageBreak()]
+  if not(hasattr(mpl_figs, '__iter__')):
+    mpl_figs = (fig,)
   for fig in mpl_figs.values():
     image = image_from_mpl_fig(fig)
     elements += [image, PageBreak()]
 
   doc.build(elements)
-
-
-
 
 def image_from_mpl_fig(mpl_fig):
   image_data = BytesIO()

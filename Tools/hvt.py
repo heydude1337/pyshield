@@ -1,6 +1,6 @@
 import pyshield
 from pyshield import CONST
-from pyshield import  run_with_configuration as run
+from pyshield import run
 import logging
 from scipy import optimize
 import numpy as np
@@ -11,29 +11,31 @@ from functools import partial
 def dose(isotope = 'I-131',
          barrier = {},
          source_location = (0,0),
-         measured_location = {'loc': {CONST.LOCATION: (0, 100)}}):
+         measured_location = {'loc': {CONST.LOCATION: (0, 100)}}, **kwargs):
 
     source = {CONST.ACTIVITY_H: 1, CONST.LOCATION: (0,0), CONST.ISOTOPE: isotope}
 
-    dose_table = run(dose_points_file = measured_location,
-                     shielding_file   = barrier,
-                     source_file      = {'source': source},
+    dose_table = run(points = measured_location,
+                     barriers     = barrier,
+                     sources      = {'source': source},
                      calculate        =  CONST.POINTS,
                      scale            = 1,
                      origin           = (100, 100),
-                     area             = [200, 200],
+                     #area             = [200, 200],
                      log              = logging.ERROR,
-                     multiple_cpu     = False,
-                     disable_buildup  =  False)
+                     multi_cpu     = False,
+                     show = 'none',
+                     #debug = 'info',
+                     **kwargs)
 
     return dose_table[CONST.SUM_TABLE][CONST.DOSE_MSV][0]
 
 
-def shielding_factor(isotope = 'Lu-177', material = 'Lead' , thickness = 1):
+def shielding_factor(isotope = 'Lu-177', material = 'Lead' , thickness = 1, **kwargs):
   barrier = {'barrier' : {CONST.MATERIAL: {material: thickness},
                           CONST.LOCATION: [-50, 50, 50, 50]}}
 
-  return dose(isotope = isotope, barrier=barrier) / dose(isotope=isotope)
+  return dose(isotope = isotope, barrier=barrier) / dose(isotope=isotope, **kwargs)
 
 def shielding_thickness(isotope, material, factor = 0.5):
   """ Find half value thickness for isotope and material by optimization """

@@ -1,46 +1,72 @@
+# input dict or yml file
+
+log: 'info'               # set to debug or info
+
+#==============================================================================
+# Calculations options
+#==============================================================================
 pythagoras: True          # True or False
-#grid_size: 0              # Distance between points of calculation in pixels, 0 disables grid calculations
-#xy: ''                    # yaml file with locations of receiving points
+disable_buildup: False     # if True buildup is set 1 for all calculations
+multi_cpu: False          # Divide workload over the available CPU cores
+grid_size: 10             # grid spacing for cartesian grid or radial sampling for polor grid
+number_of_angles: 90      # angles used for sampling polar grid
+grid: polar               # cartesian or polar grid
+calculate:                # calculate on grid or specified points or both
+  - grid
+  - points
+scale: 1                  # scale of floor plan in cm/pixels
+origin:                   # arbritrary origin in floor plan in cm
+ - 0
+ - 0
+
+
+#==============================================================================
+#  Display options
+#==============================================================================
 clim_heatmap:             # Limits for the colorscale of the heatmap in mSv
   - 0
   - 10
-colormap: afmhot          # Any valid colormap_name for pyplot
-disable_buildup: True     # if True buildup is set 1 for all calculations
-disable_buildup: False    # Disable buildup calculations (for testing)
-#audit: False              # Gather lots of date for checking results
-multiple_cpu: False       # Divide workload over the available CPU cores
-show: 'sum'               # Disable visualization (None), show summed (Sum) or all (All)
-save_images: True         # Save displayed figures as png
-image_dpi: 300            #
-save_data: True           # Pickle dump of data
-grid: polar           # cartesian or polar grid
-grid_size: 10
-number_of_angles: 90
-iso_values:     # Isocontour values in mSv
-  - 0.1
-  - 0.3
-  - 0.4
-  - 1.2
-  - 1.67
-  - 4
-  - 5
-  - 12
+colormap: afmhot          # colormap for heatmap
 
-iso_colors:   # Line colors, any valid pyplot color
-  - 'lightgreen'
-  - 'darkgreen'
-  - 'lightblue'
-  - 'darkblue'
-  - 'red'
-  - 'darkred'
-  - 'magenta'
-  - 'darkmagenta'
+isocontour_lines:         # mSv vs any valid matplotlib color
+  0.1: lightgreen
+  0.3: darkgreen
+  0.4: lightblue
+  1.2: darkblue
+  1.67: red
+  4: darkred
+  5: magenta
+  12: darkmagenta
 
-export_dir: 'Example\'
-calculate: True                  # set to false to only display the layout
-log: 'info'                       # set to debug or info
+# Disable visualization (None)
+# Show summed (Sum)
+# Show individual plots for each source (All)
+show: 'sum'
 
-#Export:                           # Export settings, the shown plots will be exported as picture
-#  Export directory: 'Example/'
-#  File type: .png
-#  DPI: 300
+# optional: file that defines the colors of each material and thickness
+material_colors: colors.yml
+#==============================================================================
+#  Input and output for calculations
+#==============================================================================
+
+# files are found in the current working directory. Files are loaded if they
+# are found in the specified path. By default the following files will be
+# tried from the local working directory
+
+barriers: barriers.yml    # barrier definitions
+points: points.yml        # points definitions
+sources: sources.yml      # source definitions
+
+
+floor: {}                 # simulate a floor by specifying this as a barrier
+height: 0                 # simulate a floor above or below by specifying height
+export_dir: './output/'
+
+#==============================================================================
+# Export options
+#==============================================================================
+
+# Files are saved in the current working directory
+export_excel: True
+excel_filename_summary: summed_result.xlsx
+excel_filename_fullresult: full_result.xlsx

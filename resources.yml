@@ -1,6 +1,5 @@
-
 Isotopes: isotopes.yml
 Materials: materials.yml
 X-ray secundary: archer_secondary.yml
-Buildup: buildup.xlsx  
+Buildup: buildup.xlsx
 Attenuation: attenuation.xlsx

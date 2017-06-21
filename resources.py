@@ -13,30 +13,45 @@ from pyshield.yaml_wrap import yaml_wrap
 VALID_EXTENSIONS = ('.yml', '.yaml', 'xls', 'xlsx',
                     'png', 'jpeg', 'jpg', 'bmp')
 
+
+RESOURCES = {}
+
 def is_valid_resource_file(file):
   valid = False
+  if type(file) not in (str,):
+    return valid
   for ext in VALID_EXTENSIONS:
     if type(file) is str and file.endswith(ext):
       valid = True
   return valid
 
-def read_resources(files=None):
-    """ read file as resource and add to pyshield data """
+
+
+def read_resources():
+    """ read resource files and add to pyshield data """
+    #resource files are defined in the yml file in the package root
+    files = yaml_wrap.read_yaml(join(__pkg_root__, CONST.RESOURCE_FILE))
+
     # read resource files either yaml or in excel format for buildup
     data = {}
+
     resource_dir = join(__pkg_root__, 'resources')
 
-    files = dict([(key, join(resource_dir, file)) for key, file in files.items()])
+
 
     for key, file in files.items():
-        data[key] = read_resource(file)
+        full_file = join(resource_dir, file)
+        data[key] = read_data_file(full_file)
+
+
+    RESOURCES.update(data)
     return data
 
-def read_resource(file):
+def read_data_file(file):
     """ read file from disk (.yml, .xls/.xlsx and images) """
     if not(is_valid_resource_file(file)):
       print('Cannot read {0}'.format(file))
-      raise(TypeError)
+      raise TypeError
 
     log.debug('Loading: %s', file)
     ext = splitext(file)[1].lower()
@@ -54,6 +69,8 @@ def read_resource(file):
         raise TypeError
     return data
 
-#resource files are defined in the yml file in the package root
-RESOURCE_FILES = yaml_wrap.read_yaml(join(__pkg_root__, CONST.RESOURCE_FILE))
-RESOURCES = read_resources(RESOURCE_FILES)
+read_resources()
+
+
+
+

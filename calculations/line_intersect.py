@@ -130,6 +130,7 @@ def plot_lines(lines):
         plt.plot(line[:, 0], line[:, 1])
 
     intersects = intersect_lines(lines)
+
     for intersect in intersects:
         plt.plot(*intersect, ' ro')
     return
@@ -157,8 +158,7 @@ if __name__ == "__main__":
     NLINES = 10
     BOX = ((-10, -10), (10, 10))
 
-    random_lines = [rand_line(BOX) for i in range(0, NLINES)]
-
+    random_lines = [rand_line(BOX) for i in range(NLINES)]
 
 
     plot_lines(random_lines)
