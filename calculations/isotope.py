@@ -141,18 +141,17 @@ def calc_dose_source_at_location(source, location, shielding,
     d_meters = np.linalg.norm(np.array(source_location) -
                               np.array(location)) / 100
 
-    if CONST.POINT_SOURCE in source.get(CONST.TYPE, [CONST.POINT_SOURCE]):
-        rel_strength = dose_rate_point_source(d_meters + height)
 
-    elif CONST.LINE_SOURCE in source.get(CONST.TYPE, [None]):
+    if CONST.LINE_SOURCE in source.get(CONST.TYPE, [None]):
       if height > 0:
         print('Cannot use height > 0 for line sources')
         raise NotImplementedError
 
       rel_strength = dose_rate_line_source(source.get(CONST.LENGTH), d_meters)
+
     else:
-      print(source.get(CONST.TYPE, CONST.POINT_SOURCE))
-      raise ValueError
+      #print(source.get(CONST.TYPE, CONST.POINT_SOURCE))
+      rel_strength = dose_rate_point_source(d_meters + height / 100)
 
 
     # calculate the dose for the location

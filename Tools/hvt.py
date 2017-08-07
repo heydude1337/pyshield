@@ -25,6 +25,7 @@ def dose(isotope = 'I-131',
                      log              = logging.ERROR,
                      multi_cpu     = False,
                      show = 'none',
+                     disable_buildup = False,
                      #debug = 'info',
                      **kwargs)
 

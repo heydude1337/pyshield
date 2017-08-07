@@ -258,28 +258,32 @@ def show_floorplan():
         return points_drawn
 
     def draw_sources(sources):
-        def draw_source(name, source):
-            log.debug('Plotting source %s', name)
-            plot_fcn = lambda xy: plt.plot(*xy,
-                                           color  = SOURCE_COLOR,
-                                           marker = SOURCE_SHAPE,
-                                           picker = 5)
+      if sources is None or sources == {}:
+        log.warning('No Sources Defined!')
+        sources = {}
 
-            location = np.array(source[CONST.LOCATION])
+      def draw_source(name, source):
+          log.debug('Plotting source %s', name)
+          plot_fcn = lambda xy: plt.plot(*xy,
+                                         color  = SOURCE_COLOR,
+                                         marker = SOURCE_SHAPE,
+                                         picker = 5)
 
-            p = plot_fcn(location)[0]
-            p.name = name
+          location = np.array(source[CONST.LOCATION])
 
-            plt.show()
+          p = plot_fcn(location)[0]
+          p.name = name
 
-            return p
+          plt.show()
 
-        points = []
-        for name, source in sources.items():
-            p = draw_source(name, source)
-            points += [p]
+          return p
 
-        return points
+      points = []
+      for name, source in sources.items():
+          p = draw_source(name, source)
+          points += [p]
+
+      return points
 
 
     # show floor plan
@@ -289,7 +293,7 @@ def show_floorplan():
 
 
 
-
+    log.debug(sources.keys())
     draw_barriers(shielding) # plot shielding baririers
     draw_sources(sources)    # plot sources
     draw_points(points)      # points
@@ -364,7 +368,8 @@ def plot_dose_map(dose_map=None, legend=None):
     legend_labels = [str(value) + ' mSv' for value in isocontours]
 
     plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
-    plt.gca().add_artist(legend)
+    if legend is not None:
+      plt.gca().add_artist(legend)
     return fig, None
 
 

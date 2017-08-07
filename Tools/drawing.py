@@ -5,7 +5,7 @@ import yaml
 import numpy as np
 
 
-default_shielding = {'Material [cm]': {'Lead': 0.2}}
+default_shielding = {'Lead': 0.2}
 
 
 def wall(name = 'wall', shielding = default_shielding, fig = None, npoints = 2):

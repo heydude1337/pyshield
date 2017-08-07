@@ -65,6 +65,7 @@ def set_setting(key, value):
     raise KeyError
   if is_valid_resource_file(value) and key not in SKIP_READING_FILES_ON_START:
     try:
+      log.debug('Reading: %s', value)
       value = read_data_file(value)
     except (TypeError, FileNotFoundError):
       if key in (CONST.MATERIAL_COLORS, CONST.SOURCES, CONST.SHIELDING, CONST.POINTS):

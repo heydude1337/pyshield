@@ -229,10 +229,6 @@ def point_calculations(worker):
 
   return table, summary
 
-
-
-
-
 def grid_calculations(worker):
   """ Performs calculations for all points on a grid. grid type and grid
       sampling should by specified with the \'grid\', \'grid_size\' and
