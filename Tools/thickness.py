@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 from hvt import shielding_factor, shielding_thickness
 import numpy as np
-lead_thickness = np.array(range(0, 50))[1:]/10
-lead_thickness = [3, 1.4]
-isotope = 'F-18'
-material = 'Lead'
+
+reference_material = 'Lead'  # shielding material for which thickness is defined
+reference_thickness = np.array(range(0, 50))[1:]/10
+
+materials = ['Concrete', 'Robalith 3.5', 'Robalith 3.7',  'Brick', 'Lead']
+isotope = 'I-131'   # isotope
 
 factor =[]
 
-for t in lead_thickness:
-  factor += [shielding_factor(isotope=isotope, material= material , thickness = t)]
+for t in reference_thickness:
+  factor += [shielding_factor(isotope=isotope, \
+                              material=reference_material , thickness = t)]
 
-
-materials = ['Concrete', 'Robalith 3.5', 'Brick', 'Lead']
-material.remove(material)
+materials.remove(reference_material)
 
 thickness = {}
-thickness['lead'] = lead_thickness
+thickness[reference_material] = reference_thickness
 
 for material in materials:
   t = []

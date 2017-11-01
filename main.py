@@ -118,12 +118,12 @@ def check_calc_settings():
 
   if len(get_setting(CONST.SOURCES)) == 0:
     log.error(msg.format('sources', get_setting(CONST.SOURCES)))
-    raise ValueError
+    # raise ValueError
     return False
 
   if len(get_setting(CONST.POINTS)) == 0 and CONST.POINTS in calc_setting:
     log.error(msg.format('points', get_setting(CONST.POINTS)))
-    raise ValueError
+    # raise ValueError
     return False
 
   return True
@@ -190,7 +190,7 @@ def summary_table(table):
   # summary = summary.iloc[new_index].reset_index()
 
   summary = summary.iloc[new_index]
-  summary = summary.to_frame()
+  #summary = summary.to_frame()
   summary.reset_index(inplace = True)
 
   # add corrected dose for occupancy

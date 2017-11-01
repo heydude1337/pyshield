@@ -73,7 +73,7 @@ def calc_dose_at_point(point):
 
     # run all calculations
     log.debug('Running with config %s', config)
-    result = pyshield.run.run_with_configuration(**config)
+    result = pyshield.run(**config)
     log.info('Finished')
 
     return result
