@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from pyshield import CONST, __pkg_root__, log
+from pyshield import CONST, __pkg_root__, log, read_yaml, is_yaml
 from pyshield.resources import is_valid_resource_file, read_data_file
-from pyshield.yaml_wrap.yaml_wrap import read_yaml, is_yaml
 import numpy as np
 from os.path import join
 

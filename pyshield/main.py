@@ -6,10 +6,9 @@ Created on Mon Mar 28 18:17:39 2016
 """
 
 import pyshield
-from pyshield import CONST
+from pyshield import CONST, is_yaml, read_yaml
 from pyshield.getconfig import get_setting, set_settings, is_setting
 from pyshield.resources import is_valid_resource_file, read_data_file
-from pyshield.yaml_wrap.yaml_wrap import is_yaml, read_yaml
 from pyshield.visualization import show, print_dose_report
 from pyshield.export import export
 from pyshield import log, set_log_level
@@ -20,7 +19,6 @@ import multiprocessing
 import os
 from timeit import default_timer as timer
 import pandas as pd
-from pyshield.report import make_report
 from natsort import index_natsorted
 
 

@@ -14,7 +14,7 @@ Lead Glass:
     As: 0.002651
     Pb: 0.751938
 Concrete:
-  Density [g/cm^3]: 2.3
+  Density [g/cm^3]: 2.24
   Composition:
   #source: http://physics.nist.gov/PhysRefData/XrayMassCoef/tab2.html
     H: 0.022100

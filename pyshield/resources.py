@@ -7,8 +7,8 @@ import pandas as pd
 import matplotlib.image as mpimg
 import numpy as np
 
-from pyshield import __pkg_root__, CONST, log
-from pyshield.yaml_wrap import yaml_wrap
+from pyshield import __pkg_root__, CONST, log, read_yaml
+
 
 VALID_EXTENSIONS = ('.yml', '.yaml', 'xls', 'xlsx',
                     'png', 'jpeg', 'jpg', 'bmp')
@@ -30,7 +30,7 @@ def is_valid_resource_file(file):
 def read_resources():
     """ read resource files and add to pyshield data """
     #resource files are defined in the yml file in the package root
-    files = yaml_wrap.read_yaml(join(__pkg_root__, CONST.RESOURCE_FILE))
+    files = read_yaml(join(__pkg_root__, CONST.RESOURCE_FILE))
 
     # read resource files either yaml or in excel format for buildup
     data = {}
@@ -58,7 +58,7 @@ def read_data_file(file):
 
     if ext in ('.yml', '.yaml'):
         log.debug('reading yaml')
-        data = yaml_wrap.read_yaml(file)
+        data = read_yaml(file)
     elif ext in ('.xls', '.xlsx'):
         log.debug('reading xml')
         data = pd.read_excel(file, sheetname=None)  # read all sheets

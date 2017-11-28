@@ -2,7 +2,7 @@
 
     Last Updated 05-02-2016 """
 
-DEF_PREFERENCE_FILE =   'default_preferences.yml'
+DEF_PREFERENCE_FILE =   'default_config.yml'
 RESOURCE_FILE =         'resources.yml'
 
 SUM_SOURCES =           'sum_sources'

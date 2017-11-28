@@ -1,6 +1,6 @@
 from os.path import split
+from pyshield.yaml_io import is_yaml, read_yaml
 
-from pyshield.yaml_wrap.yaml_wrap import read_yaml, write_yaml
 
 from pyshield import constants as CONST
 
@@ -12,7 +12,7 @@ __copyright__ = "Copyright 2016, The pyshield Project"
 __license__ = "MIT"
 __version__ = "0.9"
 __maintainer__ = "Marcel Segbers"
-__email__ = "m.segbers@erasmusmc.nl"
+__email__ = "heydude1337@gmail.com"
 __status__ = "Beta"
 __pkg_root__ = split(__file__)[0]
 
