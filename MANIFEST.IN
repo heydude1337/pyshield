@@ -1,2 +1,4 @@
 include README.MD
 include LICENCE
+recursive-include *.yml, *.xlsx
+

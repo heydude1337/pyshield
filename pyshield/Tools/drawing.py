@@ -1,9 +1,10 @@
-from pyshield import CONST
+
 
 import matplotlib.pyplot as plt
 import yaml
 import numpy as np
 
+import pyshield as ps
 
 default_shielding = {'Lead': 0.2}
 
@@ -24,8 +25,8 @@ def wall(name = 'wall', shielding = default_shielding, fig = None, npoints = 2):
     for i in range(0, len(points)-1):
       wall = {}
       loc = list(points[i]) + list(points[i+1])
-      wall[CONST.LOCATION] = [float(np.round(li)) for li in loc]
-      wall[CONST.MATERIAL] = shielding.copy()
+      wall[ps.LOCATION] = [float(np.round(li)) for li in loc]
+      wall[ps.MATERIAL] = shielding.copy()
       walls[name + str(i)] = wall
 
     print(yaml.dump(walls, default_flow_style = False))
@@ -40,9 +41,9 @@ def point(name = 'point', fig = None, npoints = 1,
     points = {}
     for i, pi in enumerate(p):
       pname = name + str(i + 1)
-      points[pname] = {CONST.LOCATION:          [float(pi[0]), float(pi[1])],
-                       CONST.OCCUPANCY_FACTOR:  occupancy_factor,
-                       CONST.ALIGNMENT:          alignment}
+      points[pname] = {ps.LOCATION:          [float(pi[0]), float(pi[1])],
+                       ps.OCCUPANCY_FACTOR:  occupancy_factor,
+                       ps.ALIGNMENT:          alignment}
 
     print(yaml.dump(points))
     return points# -*- coding: utf-8 -*-

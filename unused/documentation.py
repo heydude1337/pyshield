@@ -16,19 +16,17 @@ DOC_STRINGS = \
   (CONST.GRID,               'Specify grid to be \'polar\' or \'cartesian\'. Polar grid sampling provides faster calculations.'),
   (CONST.GRIDSIZE,           'Specify the sampling distance for the grid. For cartesian girds the distance is equal to the grid_size parameter. For polar grid grids, the grid_size determines the radial diastance between points.'),
   (CONST.NANGLES,            'Specify the number of angles for polar grid sampling.'),
-  (CONST.POINTS,              'Specify a yaml file with points for which the dos will be calculated'),
+  (CONST.POINTS,             'Specify a yaml file with points for which the dos will be calculated'),
   (CONST.CLIM_HEATMAP,       'Specify the clim for the heatmap: low,high (notice no space)'),
   (CONST.COLORMAP,           'Specify the colormap (any valid matplotlib colormap name)'),
   (CONST.SHOW,               'Display the results of grid calculations in a nice figure. Show all sources seperately (all), show the summed dose (sum), or disable showing (none)'),
   (CONST.MULTI_CPU,          'Perform calculations on all availabel cpu cores. Disable to debug errors'),
   (CONST.PYTHAGORAS,         'When enabled the effective thickness of the barrier is calculated taking into account the angle of intersection.'),
-  (CONST.ISO_VALUES,         'Isocontours for these dose values will be drawn. Number of values must match number of colors'),
-  (CONST.ISO_COLORS,         'Colors for the isocontours. Number of colors must match number of values'),
   (CONST.DISABLE_BUILDUP,    'When True buildup will be disabled (testing purpuses)'),
   (CONST.CALCULATE,          'Perform calculation'),
   (CONST.LOG,                'Set log level (info or debug), debug will slow down the calculations considerably'),
-  (CONST.FLOOR,              'Calculate the dosemap for a floor above or below the source(s) by passing a dict with keys \'{height}\' (specifying the additional height in cm) and \'{materials}\' specifying the additional shielding'.format(materials = CONST.MATERIALS, height=CONST.HEIGHT)),
-  (CONST.AREA,               'If the floor_plan option is not used an empty area can be specified (width, height)'))
+  (CONST.FLOOR,              'Calculate the dosemap for a floor above or below the source(s) by passing a dict with keys \'{height}\' (specifying the additional height in cm) and \'{materials}\' specifying the additional shielding'.format(materials = CONST.MATERIALS, height=CONST.HEIGHT)))
+
 
 
 
@@ -48,13 +46,10 @@ TYPES = dict(
   (CONST.SHOW,               'boolean'),
   (CONST.MULTI_CPU,          'boolean'),
   (CONST.PYTHAGORAS,         'boolean'),
-  (CONST.ISO_VALUES,         'list of floats'),
-  (CONST.ISO_COLORS,         'list of colors'),
   (CONST.DISABLE_BUILDUP,    'boolean'),
   (CONST.CALCULATE,          'boolean'),
   (CONST.LOG,                'string'),
-  (CONST.FLOOR,              'dict'),
-  (CONST.AREA,               'list')))
+  (CONST.FLOOR,              'dict')))
 
 
 

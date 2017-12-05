@@ -9,7 +9,6 @@ Last Updated 05-02-2016
 """
 
 import numpy as np
-import pickle
 import pyshield
 import traceback
 from matplotlib import pyplot as plt
@@ -17,9 +16,8 @@ from os.path import join
 from os import makedirs
 from datetime import datetime
 
-from pyshield import CONST, get_setting, log
-from pyshield.resources import RESOURCES
-from pyshield.calculations.isotope import equivalent_activity
+import pyshield as ps
+
 
 # Default Visualisation options
 WALL_COLOR            = 'b'
@@ -31,11 +29,11 @@ LEGEND_LOCATION       = 4
 POINT_COLOR           = 'b'
 POINT_SHAPE           = 'o'
 LABEL_TEXT_SIZE       = 10
-
+DEFAULT_ALIGNMENT     = 'top left'
 
 def sum_dose_maps(dose_maps):
     """ sum a collection of dose maps to obtain the total dose """
-    log.debug('Summing %s dose_maps', len(dose_maps))
+    ps.logger.debug('Summing %s dose_maps', len(dose_maps))
     dose_maps = np.stack(dose_maps)
     return np.nansum(dose_maps, axis=0)
 
@@ -43,9 +41,9 @@ def sum_dose_maps(dose_maps):
 def barrier_color(barrier):
     """ Determine color for barrier (lookup in the materials colors dict) """
 
-    colors    = get_setting(CONST.MATERIAL_COLORS)
-    material  = list(barrier[CONST.MATERIAL].keys())[0]
-    thickness = barrier[CONST.MATERIAL][material]
+    colors    = ps.config.get_setting(ps.MATERIAL_COLORS)
+    material  = list(barrier[ps.MATERIAL].keys())[0]
+    thickness = barrier[ps.MATERIAL][material]
 
     try:
         color = colors[material][thickness]
@@ -61,30 +59,30 @@ def barrier_color(barrier):
 def calc_dose_at_point(point):
     """ Calculate the dose at a specific point """
 
-    log.info('Calculate dose at point')
+    ps.logger.info('Calculate dose at point')
     config = {}
 
     if not hasattr(pyshield, 'RUN_CONFIGURATION'):
         raise RuntimeError
 
     config = pyshield.RUN_CONFIGURATION
-    config[CONST.CALCULATE] = CONST.POINTS
-    config[CONST.POINTS] = {'double click': {CONST.LOCATION: point}}
+    config[ps.CALCULATE] = ps.POINTS
+    config[ps.POINTS] = {'double click': {ps.LOCATION: point}}
 
     # run all calculations
-    log.debug('Running with config %s', config)
+    ps.logger.debug('Running with config %s', config)
     result = pyshield.run(**config)
-    log.info('Finished')
+    ps.logger.info('Finished')
 
     return result
 
 def show_floorplan():
     """ Show shielding barriers on top of floor plan. """
     #get application data
-    floor_plan = get_setting(CONST.FLOOR_PLAN)
-    shielding  = get_setting(CONST.SHIELDING)
-    sources    = get_setting(CONST.SOURCES)
-    points     = get_setting(CONST.POINTS)
+    floor_plan = ps.config.get_setting(ps.FLOOR_PLAN)
+    shielding  = ps.config.get_setting(ps.SHIELDING)
+    sources    = ps.config.get_setting(ps.SOURCES)
+    points     = ps.config.get_setting(ps.POINTS)
 
 
 
@@ -96,13 +94,13 @@ def show_floorplan():
         """ Return information about shielding when line is clicked """
         materials = ''
 
-        for material, thickness in shielding[name][CONST.MATERIAL].items():
+        for material, thickness in shielding[name][ps.MATERIAL].items():
             if materials != '':
                 materials += '\n'
             materials += material  + ': ' + str(thickness) + ' cm'
 
 
-        location = shielding[name][CONST.LOCATION]
+        location = shielding[name][ps.LOCATION]
         return (name, materials, location)
 
     def source_descr(name):
@@ -111,8 +109,8 @@ def show_floorplan():
           text = 'Isotope: {isotope} \nEquivalent Activity: {activity}'
           source = sources[name]
 
-          activity = equivalent_activity(source)
-          text = text.format(isotope=source[CONST.ISOTOPE],
+          activity = ps.isotope.equivalent_activity(source)
+          text = text.format(isotope=source[ps.ISOTOPE],
                              activity='{0} MBq'.format(np.round(activity)))
         except:
           traceback.print_exc()
@@ -122,10 +120,10 @@ def show_floorplan():
     def figure_click(event):
         """ Calculate dose at mouse position on double click and display. """
         result = None
-        log.debug('Figure click %s', event)
+        ps.logger.debug('Figure click %s', event)
         if event.dblclick:
-            log.debug('double click')
-            log.debug(str(event))
+            ps.logger.debug('double click')
+            ps.logger.debug(str(event))
             try:
                 result = calc_dose_at_point((event.xdata, event.ydata))
             except:
@@ -133,7 +131,7 @@ def show_floorplan():
                 traceback.print_exc()
 
             print('{0}'.format(result))
-            print('Total Dose: {0}'.format(np.sum(result[CONST.DOSE_MSV])))
+            print('Total Dose: {0}'.format(np.sum(result[ps.DOSE_MSV])))
             result.to_excel('output.xslx')
         return result
 
@@ -159,16 +157,16 @@ def show_floorplan():
     def draw_thickness(barrier):
         """ Barrier thickness weighted by density """
         d = 0
-        for material, thickness in barrier[CONST.MATERIAL].items():
-            density = RESOURCES[CONST.MATERIALS][material][CONST.DENSITY]
+        for material, thickness in barrier[ps.MATERIAL].items():
+            density = ps.RESOURCES[ps.MATERIALS][material][ps.DENSITY]
             d += (thickness * density)
         return 30 # d
 
     def draw_barriers(barriers):
         def draw_barrier(name, barrier):
 
-            log.debug('start drawing %s', name)
-            location = np.array(barrier[CONST.LOCATION])
+            ps.logger.debug('start drawing %s', name)
+            location = np.array(barrier[ps.LOCATION])
 
             linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE
 
@@ -183,10 +181,10 @@ def show_floorplan():
                 # if label already in the lagend do nat add
                 label = None
             msg = 'Adding %s with thickness %s and color %s'
-            log.debug(msg, label, linewidth, color)
+            ps.logger.debug(msg, label, linewidth, color)
 
             l = [[location[0], location[2]], [location[1], location[3]]]
-            log.debug('at location %s', l)
+            ps.logger.debug('at location %s', l)
 
             line = plt.plot(*l,
                             color     = color,
@@ -195,7 +193,7 @@ def show_floorplan():
                             picker    = linewidth,
                             label     = label)[0]
 
-            log.debug(line)
+            ps.logger.debug(line)
             line.name = name
             plt.show()
             return line
@@ -206,13 +204,7 @@ def show_floorplan():
             lines += [line]
         return lines
 
-    def draw_points(points):
-        DEFAULT_ALIGNMENT = 'top left'
-
-        def draw_point(name, point, alignment = DEFAULT_ALIGNMENT):
-
-            log.debug('Drawing %s at location %s and alignebt %s', name, point, alignment)
-
+    def annotate(name, point, alignment = DEFAULT_ALIGNMENT):
             DELTA = 20
             offset = np.array((0, 0))
             ha = 'center'
@@ -230,13 +222,6 @@ def show_floorplan():
                 offset[1] -= DELTA
                 va = 'top'
 
-            log.debug('Plotting point %s', name)
-            plot_fcn = lambda xy: plt.plot(*xy,
-                                           color  = POINT_COLOR,
-                                           marker = POINT_SHAPE,
-                                           picker = 5)
-            print(point)
-            p = plot_fcn(point)
             plt.annotate(name, xy=point, xytext = offset,
                          textcoords='offset points', ha=ha, va=va,
                          bbox=dict(boxstyle='round,pad=0.5',
@@ -244,12 +229,31 @@ def show_floorplan():
                                    alpha=0.5),
                          arrowprops=dict(arrowstyle = '->',
                                          connectionstyle='arc3,rad=0'))
+
+    def draw_points(points):
+
+        def draw_point(name, point, alignment = DEFAULT_ALIGNMENT):
+
+            ps.logger.debug('Drawing %s at location %s and alignebt %s', name, point, alignment)
+
+
+
+            ps.logger.debug('Plotting point %s', name)
+            plot_fcn = lambda xy: plt.plot(*xy,
+                                           color  = POINT_COLOR,
+                                           marker = POINT_SHAPE,
+                                           picker = 5)
+
+            p = plot_fcn(point)
+
+            annotate(name, point, alignment = alignment)
+
             return p
 
         points_drawn = []
         for name, point in points.items():
-            location = point[CONST.LOCATION]
-            alignment = point.get(CONST.ALIGNMENT, DEFAULT_ALIGNMENT)
+            location = point[ps.LOCATION]
+            alignment = point.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
 
 
 
@@ -259,28 +263,31 @@ def show_floorplan():
 
     def draw_sources(sources):
       if sources is None or sources == {}:
-        log.warning('No Sources Defined!')
+        ps.logger.warning('No Sources Defined!')
         sources = {}
 
-      def draw_source(name, source):
-          log.debug('Plotting source %s', name)
+      def draw_source(name, source, alignment = DEFAULT_ALIGNMENT):
+          ps.logger.debug('Plotting source %s', name)
           plot_fcn = lambda xy: plt.plot(*xy,
                                          color  = SOURCE_COLOR,
                                          marker = SOURCE_SHAPE,
                                          picker = 5)
 
-          location = np.array(source[CONST.LOCATION])
+          location = np.array(source[ps.LOCATION])
 
           p = plot_fcn(location)[0]
           p.name = name
 
+          alignment = source.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
+          annotate(name, location, alignment = alignment)
           plt.show()
 
           return p
 
       points = []
       for name, source in sources.items():
-          p = draw_source(name, source)
+          alignment = source.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
+          p = draw_source(name, source, alignment)
           points += [p]
 
       return points
@@ -293,7 +300,7 @@ def show_floorplan():
 
 
 
-    log.debug(sources.keys())
+    ps.logger.debug(sources.keys())
     draw_barriers(shielding) # plot shielding baririers
     draw_sources(sources)    # plot sources
     draw_points(points)      # points
@@ -323,19 +330,19 @@ def show_floorplan():
 def plot_dose_map(dose_map=None, legend=None):
     """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
 
-    clim = get_setting(CONST.CLIM_HEATMAP)
-    colormap = get_setting(CONST.COLORMAP)
-    floor_plan = get_setting(CONST.FLOOR_PLAN)
-    isocontour_lines = get_setting(CONST.ISOCONTOUR_LINES)
+    clim = ps.config.get_setting(ps.CLIM_HEATMAP)
+    colormap = ps.config.get_setting(ps.COLORMAP)
+    floor_plan = ps.config.get_setting(ps.FLOOR_PLAN)
+    isocontour_lines = ps.config.get_setting(ps.ISOCONTOUR_LINES)
 
     extent=get_extent(floor_plan)
 
-    log.debug('clims: %s', clim)
-    log.debug('colormap: %s', colormap)
+    ps.logger.debug('clims: %s', clim)
+    ps.logger.debug('colormap: %s', colormap)
 
-    log.debug('loading floor_plan')
+    ps.logger.debug('loading floor_plan')
     fig, legend = show_floorplan()
-    log.debug('floor_plan loaded')
+    ps.logger.debug('floor_plan loaded')
 
 
     # show heatmap
@@ -347,7 +354,7 @@ def plot_dose_map(dose_map=None, legend=None):
                cmap     = plt.get_cmap(colormap))
 
     # show isocontours
-    log.info('dose_map shape %s', dose_map.shape)
+    ps.logger.info('dose_map shape %s', dose_map.shape)
 
     isocontours = np.array(list(isocontour_lines.keys()))
     isocontour_colors = np.array(list(isocontour_lines.values()))
@@ -355,8 +362,8 @@ def plot_dose_map(dose_map=None, legend=None):
     isocontour_colors = isocontour_colors[isocontour_colors.argsort()]
     isocontours.sort()
 
-    log.debug('Isocontours: %s', str(isocontours))
-    log.debug('Isocontour_colors: %s', str(isocontour_colors))
+    ps.logger.debug('Isocontours: %s', str(isocontours))
+    ps.logger.debug('Isocontour_colors: %s', str(isocontour_colors))
 
     contour = plt.contour(dose_map, isocontours,
                           colors=isocontour_colors, extent=extent)
@@ -376,13 +383,13 @@ def plot_dose_map(dose_map=None, legend=None):
 def show(results = {}):
     """ Show dose maps, shielding, sources and isocontours as specified in the
     application settings."""
-    dose_maps = results[CONST.DOSE_MAPS]
+    dose_maps = results[ps.DOSE_MAPS]
 
 
 
-    show_setting = get_setting(CONST.SHOW).lower()
-    log.debug('%s dosem_maps loaded for visualization', len(results))
-    log.debug('Showing %s dose_maps', show_setting)
+    show_setting = ps.config.get_setting(ps.SHOW).lower()
+    ps.logger.debug('%s dosem_maps loaded for visualization', len(results))
+    ps.logger.debug('Showing %s dose_maps', show_setting)
     figures = None
 
     if show_setting not in ('all', 'sum'):
@@ -390,15 +397,15 @@ def show(results = {}):
 
     if len(results) == 0 or dose_maps is None or len(dose_maps) == 0:
         fig, _ = show_floorplan()
-        return {CONST.FLOOR_PLAN: fig}
+        return {ps.FLOOR_PLAN: fig}
 
     def plot(dose_map, title = ''):
         """ Display a dose map and give figere a title."""
         try:
-          log.info('plotting %s', title)
+          ps.logger.info('plotting %s', title)
           figure, _ = plot_dose_map(dose_map)
         except:
-          log.error('failed plotting %s', title)
+          ps.logger.error('failed plotting %s', title)
           traceback.print_exc()
           return None
 
@@ -411,7 +418,7 @@ def show(results = {}):
     figures={}
     # show and save all figures it config property is set to show all
     if show_setting == 'all':
-        for key, dose_map in results[CONST.DOSE_MAPS].items():
+        for key, dose_map in results[ps.DOSE_MAPS].items():
             figures[key] = plot(dose_map,  title = key)
 
     if show_setting in ('all', 'sum'):
@@ -422,8 +429,8 @@ def show(results = {}):
 def save(figures = None, dose_maps = None):
     """ Save figures/dose maps to disk. Export dir is defined in application
         settings."""
-    export_dir = get_setting(CONST.EXPORT_DIR)
-    save_images = get_setting(CONST.SAVE_IMAGES)
+    export_dir = ps.config.get_setting(ps.EXPORT_DIR)
+    save_images = ps.config.get_setting(ps.SAVE_IMAGES)
 
     makedirs(export_dir, exist_ok=True)
 
@@ -449,15 +456,16 @@ def maximize_window():
         mng.full_screen_toggle()
     else:
         msg = 'Cannot maximize a pyplot figure that uses %s as backend'
-        log.warn(msg, backend)
+        ps.logger.warn(msg, backend)
     return
 
 
 def get_extent(floorplan):
     """ Return boundaries of the image in physical coordinates """
 
-    origin = get_setting(CONST.ORIGIN)
-    scale = get_setting(CONST.SCALE)
+    ps.logger.debug(ps.config.__str__())
+    origin = ps.config.get_setting(ps.ORIGIN)
+    scale = ps.config.get_setting(ps.SCALE)
 
 
     extent_pixels = (0.5 , floorplan.shape[1]-0.5,
@@ -472,20 +480,20 @@ def get_extent(floorplan):
 def save_figure(fig, source_name):
     """ save specifed figure to disk, file name gets a time stamp appended"""
 
-    fname = get_setting(CONST.EXPORT_FNAME)
-    export_dir = get_setting(CONST.EXPORT_DIR)
-    dpi = get_setting(CONST.IMAGE_DPI)
+    fname = ps.config.get_setting(ps.EXPORT_FNAME)
+    export_dir = ps.config.get_setting(ps.EXPORT_DIR)
+    dpi = ps.config.get_setting(ps.IMAGE_DPI)
 
     if '{time_stamp}' and '{source_name}' in fname:
         time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
         fname = fname.format(time_stamp = time_stamp,
                              source_name = source_name)
     else:
-        log.error('Invalid filename: ' + fname)
+        ps.logger.error('Invalid filename: ' + fname)
 
-    fname = join(get_setting(export_dir, fname))
+    fname = join(ps.config.get_setting(export_dir, fname))
 
-    log.debug('Writing: ' + fname)
+    ps.logger.debug('Writing: ' + fname)
     fig.savefig(fname, dpi=dpi, bbox_inches='tight')
 
 
@@ -507,26 +515,26 @@ def print_dose_report(pandas_table):
 
   # table header
   print(output.format('point name',
-                      CONST.DOSE_MSV,
-                      CONST.DOSE_OCCUPANCY_MSV,
-                      CONST.OCCUPANCY_FACTOR))
+                      ps.DOSE_MSV,
+                      ps.DOSE_OCCUPANCY_MSV,
+                      ps.OCCUPANCY_FACTOR))
 
   # iterate over table and select color based on tresholds
   for row in pandas_table.iterrows():
 
     index, data = row
-    if data[CONST.DOSE_OCCUPANCY_MSV] > 0.3:
+    if data[ps.DOSE_OCCUPANCY_MSV] > 0.3:
       color = colors.format(color = RED)
-    elif data[CONST.DOSE_OCCUPANCY_MSV] > 0.1:
+    elif data[ps.DOSE_OCCUPANCY_MSV] > 0.1:
       color = colors.format(color = BLUE)
     else:
       color = colors.format(color = GREEN)
 
     # get values for output
-    name = data[CONST.POINT_NAME]
-    dose = np.round(data[CONST.DOSE_MSV], decimals=2)
-    corrected_dose = np.round(data[CONST.DOSE_OCCUPANCY_MSV], decimals = 2)
-    occupancy = data[CONST.OCCUPANCY_FACTOR]
+    name = data[ps.POINT_NAME]
+    dose = np.round(data[ps.DOSE_MSV], decimals=2)
+    corrected_dose = np.round(data[ps.DOSE_OCCUPANCY_MSV], decimals = 2)
+    occupancy = data[ps.OCCUPANCY_FACTOR]
 
     msg =  output.format(name, dose, corrected_dose, occupancy)
 

@@ -10,8 +10,10 @@ from setuptools import setup
 
 README = 'README.md'
 VERSION = 0.11
-DESCRIPTION = 'Dicom Toolkit for reading dicom files to  SimpleITK images'
-NAME = 'SimpleDicomToolkit'
+DESCRIPTION = ('Pyshield is a package for nuclear medicine departments to'
+               'calculate the necessary amount of shielding.')
+
+NAME = 'pyshield'
 
 
 
@@ -33,14 +35,14 @@ setup(name=NAME,
         'Intended Audience :: Science/Research',
         'Natural Language :: English'
       ],
-      keywords='phantom analysis simpleitk medical dicom',
-      url='https://github.com/heydude1337/SimplePhantomToolkit',
+      keywords='shielding nuclear medicine, isotopes, pet, spect',
+      # url='https://github.com/heydude1337/pyshield',
       author='HeyDude',
       author_email='heydude1337@gmail.com',
       license='MIT',
-      packages=['SimpleDicomToolkit'],
+      packages=['pyshield', 'pyshield.calculations', 'pyshield.resources', 'pyshield.tools'],
       install_requires=[
-          'SimpleITK'
+          'pandas', 'natsort', 'numpy', 'scipy', 'pyyaml', 'xlrd', 'matplotlib'
       ],
       include_package_data=True,
       zip_safe=False)

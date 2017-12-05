@@ -2,7 +2,8 @@
 
     Last Updated 05-02-2016 """
 
-DEF_PREFERENCE_FILE =   'default_config.yml'
+DEF_CONFIG_FILE =   'default_config.yml'
+CONFIG_FILE = 'config.yml'
 RESOURCE_FILE =         'resources.yml'
 
 SUM_SOURCES =           'sum_sources'
@@ -43,6 +44,7 @@ CARTESIAN =             'cartesian'
 
 LOG_INFO =              'info'
 LOG_DEBUG =             'debug'
+LOG_ERROR =             'error'
 
 #==============================================================================
 # commandline arguments
@@ -127,7 +129,7 @@ TOTAL_SHIELDING =             'Shielding materials'
 SOURCE_POINT_DISTANCE =       'Distance in meters'
 DOSE_MSV =                    'Dose [mSv]'
 DOSE_OCCUPANCY_MSV =          'Dose corrected for occupancy [mSv]'
-
+DOSE_MSV_PER_ENERGY =         'Dose [mSv] per Energy'
 
 #--------------------Result keys-----------------------------------------
 DOSE_MAPS = 'dose_maps'
@@ -143,89 +145,89 @@ EXPORT_EXCEL = 'export_excel'
 EXCEL_FILENAME_SUMMARY = 'excel_filename_summary'
 EXCEL_FILENAME_FULLRESULT = 'excel_filename_fullresult'
 
-CONSTANTS =  [COLORMAP,
-              FIGURE,
-              SOURCE_NAME,
-              ATTENUATION,
-              FLOOR,
-              DISABLE_BUILDUP,
-              ACTIVITY,
-              MATERIAL,
-              FLOOR_PLAN,
-              SOURCE_POINT_DISTANCE,
-              SUM_TABLE,
-              BODY,
-              KVP,
-              MATERIALS,
-              POINT_NAME,
-              DOSE_MAPS,
-              DENSITY,
-              PYTHAGORAS,
-              SUM_SOURCES,
-              RUN_CONFIGURATION,
-              IMAGE_DPI,
-              DURATION,
-              EXPORT_DIR,
-              LOG_INFO,
-              POINT_LOCATION,
-              ISOCONTOUR_LINES,
-              DEF_PREFERENCE_FILE,
-              HEIGHT,
-              XRAY_SHIELDING,
-              ABUNDANCE,
-              CALCULATE,
-              ALIGNMENT,
-              DLP,
-              DOSE_OCCUPANCY_MSV,
-              MASS_ATTENUATION,
-              SCALE,
-              SHOW,
-              SOURCES,
-              LOG,
-              GRIDSIZE,
-              SHIELDING,
-              ORIGIN,
-              MULTI_CPU,
-              BUILDUP,
-              LOCATION,
-              POINTS,
-              SAVE_IMAGES,
-              NUMBER_OF_EXAMS,
-              ACTIVITY_H,
-              ISOTOPE,
-              TOTAL_SHIELDING,
-              CARTESIAN,
-              DOSE_MSV,
-              XRAY_SECONDARY,
-              CLIM_HEATMAP,
-              LABDA,
-              HEAD,
-              H10,
-              RESOURCE_FILE,
-              SOURCE_LOCATION,
-              ISOTOPES,
-              EXAM,
-              TYPE,
-              GRID,
-              MATERIAL_COLORS,
-              LOG_DEBUG,
-              OCCUPANCY_FACTOR,
-              POLAR,
-              TABLE,
-              DESINT,
-              NANGLES,
-              DECAY_CORRECTION,
-              POINT_SOURCE,
-              LINE_SOURCE,
-              EXPORT_EXCEL,
-              EXCEL_FILENAME_SUMMARY,
-              EXCEL_FILENAME_FULLRESULT]
-
-
-
-
-
-
+#CONSTANTS =  [COLORMAP,
+#              FIGURE,
+#              SOURCE_NAME,
+#              ATTENUATION,
+#              FLOOR,
+#              DISABLE_BUILDUP,
+#              ACTIVITY,
+#              MATERIAL,
+#              FLOOR_PLAN,
+#              SOURCE_POINT_DISTANCE,
+#              SUM_TABLE,
+#              BODY,
+#              KVP,
+#              MATERIALS,
+#              POINT_NAME,
+#              DOSE_MAPS,
+#              DENSITY,
+#              PYTHAGORAS,
+#              SUM_SOURCES,
+#              RUN_CONFIGURATION,
+#              IMAGE_DPI,
+#              DURATION,
+#              EXPORT_DIR,
+#              LOG_INFO,
+#              POINT_LOCATION,
+#              ISOCONTOUR_LINES,
+#              DEF_PREFERENCE_FILE,
+#              HEIGHT,
+#              XRAY_SHIELDING,
+#              ABUNDANCE,
+#              CALCULATE,
+#              ALIGNMENT,
+#              DLP,
+#              DOSE_OCCUPANCY_MSV,
+#              MASS_ATTENUATION,
+#              SCALE,
+#              SHOW,
+#              SOURCES,
+#              LOG,
+#              GRIDSIZE,
+#              SHIELDING,
+#              ORIGIN,
+#              MULTI_CPU,
+#              BUILDUP,
+#              LOCATION,
+#              POINTS,
+#              SAVE_IMAGES,
+#              NUMBER_OF_EXAMS,
+#              ACTIVITY_H,
+#              ISOTOPE,
+#              TOTAL_SHIELDING,
+#              CARTESIAN,
+#              DOSE_MSV,
+#              XRAY_SECONDARY,
+#              CLIM_HEATMAP,
+#              LABDA,
+#              HEAD,
+#              H10,
+#              RESOURCE_FILE,
+#              SOURCE_LOCATION,
+#              ISOTOPES,
+#              EXAM,
+#              TYPE,
+#              GRID,
+#              MATERIAL_COLORS,
+#              LOG_DEBUG,
+#              OCCUPANCY_FACTOR,
+#              POLAR,
+#              TABLE,
+#              DESINT,
+#              NANGLES,
+#              DECAY_CORRECTION,
+#              POINT_SOURCE,
+#              LINE_SOURCE,
+#              EXPORT_EXCEL,
+#              EXCEL_FILENAME_SUMMARY,
+#              EXCEL_FILENAME_FULLRESULT]
+#
+#
+#
+#
+#
+#
 
 
 

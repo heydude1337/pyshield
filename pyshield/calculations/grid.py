@@ -5,10 +5,11 @@ on each point of the grid.
 
 Last Updated 05-02-2016
 """
-
-from scipy.interpolate import griddata
 import numpy as np
-from pyshield import CONST, get_setting, log
+from scipy.interpolate import griddata
+
+import pyshield as ps
+
 from pyshield.calculations.isotope import calc_dose_source_at_location
 
 
@@ -18,47 +19,42 @@ def calculate_dose_map_for_source(source):
     configuration (data and prefs) """
 
 
-    log.debug('Material:  %s', source.get(CONST.MATERIAL, {}))
-
-    shielding = get_setting(CONST.SHIELDING)
-    floor = get_setting(CONST.FLOOR)
-    height = get_setting(CONST.HEIGHT)
+    ps.logger.debug('Material:  %s', source.get(ps.MATERIAL, {}))
 
 
-    height = get_setting(CONST.HEIGHT)
+    shielding = ps.config.get_setting(ps.SHIELDING)
 
+    part_config_items = (
+                         ps.FLOOR,
+                         ps.HEIGHT,
+                         ps.DISABLE_BUILDUP,
+                         ps.PYTHAGORAS)
 
-    disable_buildup = get_setting(CONST.DISABLE_BUILDUP)
-    pythagoras = get_setting(CONST.PYTHAGORAS)
-
-    if source[CONST.TYPE] == CONST.ISOTOPE or CONST.ISOTOPE in source[CONST.TYPE]:
-        calc_dose = lambda loc: calc_dose_source_at_location(source,
-                                                             loc,
-                                                             shielding,
-                                                             height = height,
-                                                             disable_buildup = disable_buildup,
-                                                             pythagoras = pythagoras,
-                                                             return_details = False,
-                                                             floor = floor)
+    kwargs = dict([(key, ps.config.get_setting(key)) for key in part_config_items])
 
 
 
-    else:
-        print('Unknown source type: {0}'.format(source[CONST.TYPE]))
-        raise KeyError
+    if not(source[ps.TYPE] == ps.ISOTOPE):
+        raise KeyError('Unknown source type: {0}'.format(source[ps.TYPE]))
 
+    calc_dose = lambda loc: calc_dose_source_at_location(source,
+                                                         loc,
+                                                         shielding,
+                                                         **kwargs)
     # obtain grid points for the specified source
     points, grid = grid_points(source)
+
     # pre allocate memory for dose points
     dose_points = np.zeros(len(points))
+
     for i, point in enumerate(points):
         dose_points[i] = calc_dose(point)
 
     # resample dose points to a cartesian grid
-    if get_setting(CONST.GRID) == CONST.CARTESIAN:
+    if ps.config.get_setting(ps.GRID) == ps.CARTESIAN:
         # points already on cartesian grid
         dose_map = dose_points.reshape(grid[0].shape)
-    if get_setting(CONST.GRID) == CONST.POLAR:
+    if ps.config.get_setting(ps.GRID) == ps.POLAR:
         # interpolate dose_points to rectangular grid
         dose_map = griddata(points, dose_points, grid)
 
@@ -67,28 +63,28 @@ def calculate_dose_map_for_source(source):
 
 def grid_points(source):
     """ Create a grid and list of points based on set preferences """
-    grid_type       = get_setting(CONST.GRID)
-    scale           = get_setting(CONST.SCALE)
+    grid_type       = ps.config.get_setting(ps.GRID)
+    scale           = ps.config.get_setting(ps.SCALE)
 
-    source_location = np.array(source[CONST.LOCATION])
+    source_location = np.array(source[ps.LOCATION])
 
-    origin          = np.array(get_setting(CONST.ORIGIN))
-    floor_plan      = get_setting(CONST.FLOOR_PLAN)
+    origin          = np.array(ps.config.get_setting(ps.ORIGIN))
+    floor_plan      = ps.config.get_setting(ps.FLOOR_PLAN)
     matrix_size     = np.array(floor_plan.shape)
-    grid_spacing    = get_setting(CONST.GRIDSIZE)
+    grid_spacing    = ps.config.get_setting(ps.GRIDSIZE)
     span            = matrix_size[0:2] * scale
 
     area = ((-origin[0], span[1] - origin[0]),
             (-origin[1], span[0] - origin[1]))
 
-    log.debug('area: %s', area)
+    ps.logger.debug('area: %s', area)
     X, Y = cartesian_grid(area=area, spacing=grid_spacing)
 
     if grid_type == 'cartesian':
         points = np.stack((X.flatten(), Y.flatten())).T
 
-    elif grid_type == CONST.POLAR:
-        n_angles = get_setting(CONST.NANGLES)
+    elif grid_type == ps.POLAR:
+        n_angles = ps.config.get_setting(ps.NANGLES)
 
         points = polar_points(r_spacing=grid_spacing,
                               n_angles=n_angles,

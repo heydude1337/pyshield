@@ -6,7 +6,7 @@ Created on Thu Feb 18 00:27:58 2016
 """
 
 import logging
-from pyshield import CONST
+import pyshield as ps
 
 LOG_FILE = 'pyshield.log'
 LOG_LEVEL = logging.DEBUG
@@ -39,22 +39,24 @@ def application_logger(app_name='app_name', fname=None,
 
 def set_log_level(loglevel_str):
     """ change log level for all handlers """
-    if loglevel_str == CONST.LOG_DEBUG:
+    if loglevel_str == ps.LOG_DEBUG:
         level = logging.DEBUG
-    elif loglevel_str == CONST.LOG_INFO:
+    elif loglevel_str == ps.LOG_INFO:
         level = logging.INFO
+    elif loglevel_str == ps.LOG_ERROR:
+        level = logging.ERROR
     elif type(loglevel_str) not in (str,):
         level = loglevel_str
     else:
         level = LOG_LEVEL
-    for handler in log.handlers:
+    for handler in logger.handlers:
         handler.setLevel(level)
-    log.setLevel(level)
+    logger.setLevel(level)
 
-log = application_logger(app_name='pyshield',
-                         fname=LOG_FILE,
-                         log_level=logging.INFO,
-                         log_to_console=True)
+logger = application_logger(app_name='pyshield',
+                           fname=LOG_FILE,
+                           log_level=logging.INFO,
+                           log_to_console=True)
 
 
 

@@ -1,6 +1,4 @@
-import pyshield
-from pyshield import CONST
-from pyshield import run
+
 import logging
 from scipy import optimize
 import numpy as np
@@ -8,17 +6,20 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 from functools import partial
 
+import pyshield as ps
+
+
 def dose(isotope = 'I-131',
          barrier = {},
          source_location = (0,0),
-         measured_location = {'loc': {CONST.LOCATION: (0, 100)}}, **kwargs):
+         measured_location = {'loc': {ps.LOCATION: (0, 100)}}, **kwargs):
 
-    source = {CONST.ACTIVITY_H: 1, CONST.LOCATION: (0,0), CONST.ISOTOPE: isotope}
+    source = {ps.ACTIVITY_H: 1, ps.LOCATION: (0,0), ps.ISOTOPE: isotope}
 
-    dose_table = run(points = measured_location,
+    dose_table = ps.run(points = measured_location,
                      barriers     = barrier,
                      sources      = {'source': source},
-                     calculate        =  CONST.POINTS,
+                     calculate        =  ps.POINTS,
                      scale            = 1,
                      origin           = (100, 100),
                      #area             = [200, 200],
@@ -29,12 +30,12 @@ def dose(isotope = 'I-131',
                      #debug = 'info',
                      **kwargs)
 
-    return dose_table[CONST.SUM_TABLE][CONST.DOSE_MSV][0]
+    return dose_table[ps.SUM_TABLE][ps.DOSE_MSV][0]
 
 
 def shielding_factor(isotope = 'Lu-177', material = 'Lead' , thickness = 1, **kwargs):
-  barrier = {'barrier' : {CONST.MATERIAL: {material: thickness},
-                          CONST.LOCATION: [-50, 50, 50, 50]}}
+  barrier = {'barrier' : {ps.MATERIAL: {material: thickness},
+                          ps.LOCATION: [-50, 50, 50, 50]}}
 
   return dose(isotope = isotope, barrier=barrier) / dose(isotope=isotope, **kwargs)
 
@@ -57,7 +58,7 @@ def hvt(material = 'Lead' , isotope = 'I-131'):
   return thickness
 
 if __name__ == "__main__":
-  materials = list(pyshield.RESOURCES[CONST.MATERIALS].keys())
+  materials = list(ps.RESOURCES[ps.MATERIALS].keys())
   p=Pool()
   isotope = 'I-131'
   hvt_material = partial(hvt, isotope = isotope)

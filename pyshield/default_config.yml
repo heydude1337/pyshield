@@ -1,6 +1,6 @@
 # input dict or yml file
 
-log: 'info'               # set to debug or info
+log: 'debug'               # set to debug or info
 
 #==============================================================================
 # Calculations options

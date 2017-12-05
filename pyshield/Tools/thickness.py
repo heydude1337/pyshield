@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
-from hvt import shielding_factor, shielding_thickness
+# -*- coding: utf-8 -*
 import numpy as np
+from hvt import shielding_factor, shielding_thickness
+
 
 reference_material = 'Lead'  # shielding material for which thickness is defined
 reference_thickness = np.array(range(0, 50))[1:]/10
