@@ -30,6 +30,7 @@ POINT_COLOR           = 'b'
 POINT_SHAPE           = 'o'
 LABEL_TEXT_SIZE       = 10
 DEFAULT_ALIGNMENT     = 'top left'
+FIG_SIZE              = [15, 15]
 
 def sum_dose_maps(dose_maps):
     """ sum a collection of dose maps to obtain the total dose """
@@ -195,7 +196,7 @@ def show_floorplan():
 
             ps.logger.debug(line)
             line.name = name
-            plt.show()
+            # plt.show()
             return line
 
         lines = []
@@ -280,7 +281,7 @@ def show_floorplan():
 
           alignment = source.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
           annotate(name, location, alignment = alignment)
-          plt.show()
+          # plt.show()
 
           return p
 
@@ -294,7 +295,7 @@ def show_floorplan():
 
 
     # show floor plan
-    fig = plt.figure()
+    fig = plt.figure(figsize = FIG_SIZE)
     plt.imshow(floor_plan, extent = get_extent(floor_plan), origin = 'lower')
 
 
@@ -324,6 +325,7 @@ def show_floorplan():
     fig.canvas.mpl_connect('pick_event', object_click)
     fig.canvas.mpl_connect('button_press_event', figure_click)
     maximize_window()
+    plt.show(block = False)
     return (fig, legend)
 
 
@@ -383,18 +385,27 @@ def plot_dose_map(dose_map=None, legend=None):
 def show(results = {}):
     """ Show dose maps, shielding, sources and isocontours as specified in the
     application settings."""
-    dose_maps = results[ps.DOSE_MAPS]
-
 
 
     show_setting = ps.config.get_setting(ps.SHOW).lower()
-    ps.logger.debug('%s dosem_maps loaded for visualization', len(results))
+
+    if not isinstance(show_setting, (tuple, list)):
+        show_setting = [show_setting]
+
+    ps.logger.debug('%s dose_maps loaded for visualization', len(results))
     ps.logger.debug('Showing %s dose_maps', show_setting)
-    figures = None
 
-    if show_setting not in ('all', 'sum'):
-      return None
+    figures = {}
 
+    if ps.FLOOR_PLAN in show_setting:
+        figures[ps.FLOOR_PLAN], _ = show_floorplan()
+
+
+
+
+
+
+    dose_maps = results[ps.DOSE_MAPS]
     if len(results) == 0 or dose_maps is None or len(dose_maps) == 0:
         fig, _ = show_floorplan()
         return {ps.FLOOR_PLAN: fig}
@@ -440,24 +451,24 @@ def save(figures = None, dose_maps = None):
             save_figure(figure, file)
 
 
-def maximize_window():
-    """ Maximize the current plot window """
-    backend = plt.get_backend()
-    mng = plt.get_current_fig_manager()
-
-    # Maximization depends on matplotlib backend
-    if backend in ( 'Qt4Agg', 'Qt5Agg'):
-        mng.window.showMaximized()
-    elif backend == 'wxAgg':
-        mng.frame.Maximize(True)
-    elif backend == 'TkAgg':
-        mng.window.state('zoomed')
-    elif backend == 'MacOSX':
-        mng.full_screen_toggle()
-    else:
-        msg = 'Cannot maximize a pyplot figure that uses %s as backend'
-        ps.logger.warn(msg, backend)
-    return
+#def maximize_window():
+#    """ Maximize the current plot window """
+#    backend = plt.get_backend()
+#    mng = plt.get_current_fig_manager()
+#
+#    # Maximization depends on matplotlib backend
+#    if backend in ( 'Qt4Agg', 'Qt5Agg'):
+#        mng.window.showMaximized()
+#    elif backend == 'wxAgg':
+#        mng.frame.Maximize(True)
+#    elif backend == 'TkAgg':
+#        mng.window.state('zoomed')
+#    elif backend == 'MacOSX':
+#        mng.full_screen_toggle()
+#    else:
+#        msg = 'Cannot maximize a pyplot figure that uses %s as backend'
+#        ps.logger.warn(msg, backend)
+#    return
 
 
 def get_extent(floorplan):

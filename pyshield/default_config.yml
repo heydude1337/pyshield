@@ -41,7 +41,7 @@ isocontour_lines:         # mSv vs any valid matplotlib color
 # Disable visualization (None)
 # Show summed (Sum)
 # Show individual plots for each source (All)
-show: 'sum'
+show: ['sum_sources', 'floor_plan'] # sum_sources, floor_plan or all_sources is valid
 
 # optional: file that defines the colors of each material and thickness
 material_colors: colors.yml
@@ -53,9 +53,10 @@ material_colors: colors.yml
 # are found in the specified path. By default the following files will be
 # tried from the local working directory
 
-barriers: barriers.yml    # barrier definitions
-points: points.yml        # points definitions
-sources: sources.yml      # source definitions
+barriers: barriers.yml      # barrier definitions
+points: points.yml          # points definitions
+sources: sources.yml        # source definitions
+floor_plan: floor_plan.png  # Floor plan of the room/facility
 
 
 floor: {}                 # simulate a floor by specifying this as a barrier

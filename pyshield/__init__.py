@@ -8,7 +8,7 @@ from pyshield.log import logger
 from pyshield.calculations import isotope, grid, barrier, line_intersect
 from pyshield.tools import drawing
 from pyshield import log, io, config, calculations, tools, visualization, export
-from pyshield.main import run_with_configuration as run
+from pyshield.execute import run_with_configuration as run
 
 
 # load resources from disk

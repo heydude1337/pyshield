@@ -33,8 +33,10 @@ def calculate_dose_map_for_source(source):
     kwargs = dict([(key, ps.config.get_setting(key)) for key in part_config_items])
 
 
+    if not(isinstance(source[ps.TYPE], (list, tuple))):
+       source[ps.TYPE] = [source[ps.TYPE]]
 
-    if not(source[ps.TYPE] == ps.ISOTOPE):
+    if not(ps.ISOTOPE in source[ps.TYPE]):
         raise KeyError('Unknown source type: {0}'.format(source[ps.TYPE]))
 
     calc_dose = lambda loc: calc_dose_source_at_location(source,

@@ -13,26 +13,6 @@ from natsort import index_natsorted
 
 import pyshield as ps
 
-
-#import pyshield.calculations as calc
-#import pyshield.visualization as viz
-#from pyshield import log, set_log_level
-
-
-# from pyshield import CONST, is_yaml, read_yaml
-
-
-# from pyshield.getconfig import get_setting, set_settings
-
-# from pyshield.visualization import show, print_dose_report
-# from pyshield.export import export
-
-#from pyshield.calculations.grid import calculate_dose_map_for_source
-#from pyshield.calculations.isotope import calc_dose_source_at_location
-
-
-
-
 NCORES = multiprocessing.cpu_count()
 
 def run_with_configuration(config=None, **kwargs):
@@ -52,6 +32,8 @@ def run_with_configuration(config=None, **kwargs):
     if os.path.exists(config):
         ps.logger.debug('Loading config file %s', config)
         config = ps.io.read_yaml(config)
+    else:
+        raise FileNotFoundError(config + ' not found in current folder.')
 
     # overwite settings with kwargs
     config.update(kwargs)
@@ -90,8 +72,7 @@ def run_with_configuration(config=None, **kwargs):
                ps.DOSE_MAPS: dose_maps,
                ps.SUM_TABLE: sum_table}
 
-    # display
-    results[ps.FIGURE] = ps.visualization.show(results)
+
 
     # print results to console
     if sum_table is not None:
@@ -101,42 +82,14 @@ def run_with_configuration(config=None, **kwargs):
     if pool is not None:
         pool.close()
 
+     # display
+    results[ps.FIGURE] = ps.visualization.show(results)
+
     # write results to disk if any
     ps.export.export(results)
     return results
 
 
-
-#
-#def _check_calc_settings():
-#    # Check if calculations are requested and if so check if necessary input
-#    # is given by the user. If input is missing (e.g. sources of points file)
-#    # raise ValueError. Otherwise return true.
-#
-#    ps.logger.info('Checking input')
-#    calc_setting = ps.config.get_setting(ps.CALCULATE)
-#    ps.logger.debug('Calc setting: %s', calc_setting)
-#    if not(ps.GRID in calc_setting or ps.POINTS in calc_setting):
-#        return True
-#
-#
-#    msg = 'No {0} file specified, file not found or file could' + \
-#          ' not read. {0} file: {1}'
-#
-#
-#    if len(ps.config.get_setting(ps.SOURCES)) == 0:
-#        ps.logger.error(msg.format('sources', ps.config.get_setting(ps.SOURCES)))
-#        raise ValueError
-#
-#
-#    if len(ps.config.get_setting(ps.POINTS)) == 0 and ps.POINTS in calc_setting:
-#        ps.logger.error(msg.format('points', ps.config.get_setting(ps.POINTS)))
-#        #
-#
-#        raise ValueError
-#        return False
-#
-#    return True
 
 def dose_table(value_dict = None):
     columns = (ps.SOURCE_NAME, ps.SOURCE_LOCATION, ps.POINT_NAME,
@@ -309,5 +262,6 @@ def _get_worker():
         ps.logger.info('---SINGLE CPU CALCULATIONS STARTED----')
     return pool, worker
 
-
+if __name__ == '__main__':
+    run_with_configuration()
 

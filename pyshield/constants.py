@@ -7,6 +7,7 @@ CONFIG_FILE = 'config.yml'
 RESOURCE_FILE =         'resources.yml'
 
 SUM_SOURCES =           'sum_sources'
+ALL_SOURCES =           'all_sources'
 
 RUN_CONFIGURATION =     'run_configuration'
 
