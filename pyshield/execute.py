@@ -59,11 +59,11 @@ def run_with_configuration(config=None, **kwargs):
 
     calc_setting = ps.config.get_setting(ps.CALCULATE)
 
-    if ps.GRID in calc_setting:
+    if ps.GRID in calc_setting and ps.config.get_setting(ps.SOURCES):
         # perform grid calculations
         dose_maps = grid_calculations(worker)
 
-    if ps.POINTS in calc_setting:
+    if ps.POINTS in calc_setting and ps.config.get_setting(ps.POINTS):
         # perform dose calculations
         table, sum_table = point_calculations(worker)
 

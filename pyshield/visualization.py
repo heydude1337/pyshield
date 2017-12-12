@@ -69,7 +69,7 @@ def calc_dose_at_point(point):
     config = pyshield.RUN_CONFIGURATION
     config[ps.CALCULATE] = ps.POINTS
     config[ps.POINTS] = {'double click': {ps.LOCATION: point}}
-
+    config[ps.SHOW] = []
     # run all calculations
     ps.logger.debug('Running with config %s', config)
     result = pyshield.run(**config)
@@ -77,13 +77,12 @@ def calc_dose_at_point(point):
 
     return result
 
-def show_floorplan():
+def show_floorplan(points = {}, sources = {}):
     """ Show shielding barriers on top of floor plan. """
     #get application data
     floor_plan = ps.config.get_setting(ps.FLOOR_PLAN)
     shielding  = ps.config.get_setting(ps.SHIELDING)
-    sources    = ps.config.get_setting(ps.SOURCES)
-    points     = ps.config.get_setting(ps.POINTS)
+
 
 
 
@@ -315,21 +314,19 @@ def show_floorplan():
         labels, handles = zip(*sorted(zip(labels, handles),
                                       key=lambda t: t[0]))
 
-        legend = plt.gca().legend(handles,
-                                  labels, loc='center left',
-                                  bbox_to_anchor=(1, 0.5))
-
-    else:
-        legend = None
+        plt.gca().legend(handles, labels,
+                         loc='center left',
+                         bbox_to_anchor=(1, 0.5))
 
     fig.canvas.mpl_connect('pick_event', object_click)
     fig.canvas.mpl_connect('button_press_event', figure_click)
-    maximize_window()
+
     plt.show(block = False)
-    return (fig, legend)
+    
+    return fig
 
 
-def plot_dose_map(dose_map=None, legend=None):
+def plot_dose_map(dose_map=None, legend=None, title = ''):
     """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
 
     clim = ps.config.get_setting(ps.CLIM_HEATMAP)
@@ -343,7 +340,7 @@ def plot_dose_map(dose_map=None, legend=None):
     ps.logger.debug('colormap: %s', colormap)
 
     ps.logger.debug('loading floor_plan')
-    fig, legend = show_floorplan()
+    fig = show_floorplan()
     ps.logger.debug('floor_plan loaded')
 
 
@@ -379,16 +376,20 @@ def plot_dose_map(dose_map=None, legend=None):
     plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
     if legend is not None:
       plt.gca().add_artist(legend)
-    return fig, None
+      
+    plt.title(title)
+    fig.canvas.set_window_title(title)
+    return fig
 
 
 def show(results = {}):
     """ Show dose maps, shielding, sources and isocontours as specified in the
     application settings."""
 
+    # obtain the setting from config.yml
+    show_setting = ps.config.get_setting(ps.SHOW)
 
-    show_setting = ps.config.get_setting(ps.SHOW).lower()
-
+    # make list for non lists
     if not isinstance(show_setting, (tuple, list)):
         show_setting = [show_setting]
 
@@ -398,42 +399,35 @@ def show(results = {}):
     figures = {}
 
     if ps.FLOOR_PLAN in show_setting:
-        figures[ps.FLOOR_PLAN], _ = show_floorplan()
-
-
-
-
-
-
-    dose_maps = results[ps.DOSE_MAPS]
-    if len(results) == 0 or dose_maps is None or len(dose_maps) == 0:
-        fig, _ = show_floorplan()
-        return {ps.FLOOR_PLAN: fig}
-
-    def plot(dose_map, title = ''):
-        """ Display a dose map and give figere a title."""
+        figures[ps.FLOOR_PLAN] = show_floorplan()
+    
+    sources = {}
+    points = {}
+    
+    if ps.SOURCES in show_setting:
+        sources = ps.config.get_setting(ps.SOURCES)
+        figures[ps.SOURCES]= show_floorplan(sources = sources)
+    if ps.POINTS in show_setting:
+        points     = ps.config.get_setting(ps.POINTS)
+        figures[ps.POINTS]= show_floorplan(points = points)
+    
+    if ps.SUM_SOURCES in show_setting or ps.ALL_SOURCES in show_setting:
         try:
-          ps.logger.info('plotting %s', title)
-          figure, _ = plot_dose_map(dose_map)
-        except:
-          ps.logger.error('failed plotting %s', title)
-          traceback.print_exc()
-          return None
-
-        figure.canvas.set_window_title(title)
-        plt.gca().set_title(title)
-        maximize_window()
-
-        return figure
-
-    figures={}
-    # show and save all figures it config property is set to show all
-    if show_setting == 'all':
-        for key, dose_map in results[ps.DOSE_MAPS].items():
-            figures[key] = plot(dose_map,  title = key)
-
-    if show_setting in ('all', 'sum'):
-        figures['sum'] = plot(sum_dose_maps(dose_maps.values()), title = 'sum')
+            dose_maps = results[ps.DOSE_MAPS]
+        except (TypeError, KeyError):
+            dose_maps = None
+            ps.logger.error('No dose maps found in results')
+        
+        if ps.SUM_SOURCES in show_setting and dose_maps:
+            summed_dose_map = sum_dose_maps(dose_maps.values())
+            figures[ps.FLOOR_PLAN] = plot_dose_map(summed_dose_map, 
+                   title = ps.SUM_SOURCES)
+            
+        if ps.ALL_SOURCES in show_setting and dose_maps:
+            for source, dose_map in dose_maps.items():
+                ps.logger.info('plotting %s', source)
+                figures[source] = plot_dose_map(dose_map, title = source)
+                
 
     return figures
 

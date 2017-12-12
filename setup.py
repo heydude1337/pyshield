@@ -42,7 +42,7 @@ setup(name=NAME,
       license='MIT',
       packages=['pyshield', 'pyshield.calculations', 'pyshield.resources', 'pyshield.tools'],
       install_requires=[
-          'pandas', 'natsort', 'numpy', 'scipy', 'pyyaml', 'xlrd', 'matplotlib'
+          'pandas', 'natsort', 'numpy', 'scipy', 'pyyaml', 'xlrd', 'matplotlib', 'openpyxl'
       ],
       include_package_data=True,
       zip_safe=False)
