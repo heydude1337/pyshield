@@ -41,7 +41,8 @@ VALID_CONFIG =  (ps.EXPORT_DIR,
                  ps.HEIGHT,
                  ps.EXPORT_EXCEL,
                  ps.EXCEL_FILENAME_FULLRESULT,
-                 ps.EXCEL_FILENAME_SUMMARY)
+                 ps.EXCEL_FILENAME_SUMMARY,
+                 ps.EXPORT_IMAGES)
 
 
 def __str__():

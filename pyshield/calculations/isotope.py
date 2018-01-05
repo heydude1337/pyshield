@@ -117,7 +117,7 @@ def calc_dose_source_at_location(source, location, shielding,
          dose_mSv: the total summed dose for the source at the specified
                    location and defined shielding."""
 
-    source_location = np.array(source[ps.LOCATION])
+    source_location = np.asarray(source[ps.LOCATION])
     isotope         = source[ps.ISOTOPE]
 
 

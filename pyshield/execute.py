@@ -5,7 +5,7 @@ Created on Mon Mar 28 18:17:39 2016
 @author: msegbers
 """
 
-import multiprocessing
+from pathos import multiprocessing
 import os
 from timeit import default_timer as timer
 import pandas as pd
@@ -74,13 +74,11 @@ def run_with_configuration(config=None, **kwargs):
 
 
 
-    # print results to console
-    if sum_table is not None:
-        ps.visualization.print_dose_report(sum_table)
+
 
     # necessary for multi core
     if pool is not None:
-        pool.close()
+        pool.terminate()
 
      # display
     results[ps.FIGURE] = ps.visualization.show(results)
@@ -110,7 +108,7 @@ def dose_table(value_dict = None):
 
 
 
-def point_calculator(location):
+def point_wrapper(location):
 
     table = dose_table()
     height          = ps.config.get_setting(ps.HEIGHT)
@@ -177,7 +175,7 @@ def point_calculations(worker):
     ps.logger.info('\n-----Starting point calculations-----\n')
 
     # actual calculations
-    tables = list(worker(point_calculator, locations.values()))
+    tables = list(worker(point_wrapper, locations.values()))
 
     # add additional data for each point
     location_names = locations.keys()
@@ -193,6 +191,14 @@ def point_calculations(worker):
     ps.logger.info('\n-----Point calculations finished-----\n')
     return table, summary
 
+def grid_wrapper(source_items):
+    name, source = source_items
+    calc_func = ps.grid.calculate_dose_map_for_source
+    ps.logger.info('Calculate: {0}'.format(name))
+    result = calc_func(source)
+    ps.logger.info('{0} Finished!'.format(name))
+    return result
+
 def grid_calculations(worker):
     """ Performs calculations for all points on a grid. grid type and grid
       sampling should by specified with the \'grid\', \'grid_size\' and
@@ -203,38 +209,22 @@ def grid_calculations(worker):
           source name (keys)."""
 
 
-
-    def wrapper(source_name, source):
-        calc_func = ps.grid.calculate_dose_map_for_source
-        ps.logger.info('Calculate: {0}'.format(source_name))
-        result = calc_func(source)
-        ps.logger.info('{0} Finished!'.format(source_name))
-        return result
-
     sources = ps.config.get_setting(ps.SOURCES)
+#    snames  = tuple(sources.keys())
+#    sources = tuple(sources.values())
+#    source_and_names = list(zip(snames, sources))
 
     ps.logger.info('\n-----Starting grid calculations-----\n')
-
-    snames  = tuple(sources.keys())
-    sources = tuple(sources.values())
-
     start_time = timer()
 
     # do calculations
-    if ps.config.get_setting(ps.MULTI_CPU):
-        calc_func = ps.calculations.grid.calc_dose_source_at_location
-        results = tuple(worker(calc_func,  sources))
-    else:
-        results = tuple(worker(wrapper, snames, sources))
-
-    results = dict(zip(snames, [r[0] for r in results]))
+    results = tuple(worker(grid_wrapper, sources.items()))
+    results = dict(zip(sources.keys(), [r[0] for r in results]))
 
     end_time = timer()
-
     dtime = end_time - start_time
-    ps.logger.info('It took {0} to complete the calculation'.format(dtime))
 
-    #format results
+    ps.logger.info('It took {0} to complete the calculation'.format(dtime))
 
     return results
 
@@ -252,7 +242,7 @@ def _get_worker():
         if not(os.name == 'posix'):
             raise multiprocessing.ProcessError('Not available in Windows')
 
-        pool = multiprocessing.Pool(NCORES)
+        pool = multiprocessing.ProcessPool(NCORES)
         worker = pool.map
         ps.logger.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
 

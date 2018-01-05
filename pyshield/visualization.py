@@ -12,10 +12,6 @@ import numpy as np
 import pyshield
 import traceback
 from matplotlib import pyplot as plt
-from os.path import join
-from os import makedirs
-from datetime import datetime
-
 import pyshield as ps
 
 
@@ -67,9 +63,12 @@ def calc_dose_at_point(point):
         raise RuntimeError
 
     config = pyshield.RUN_CONFIGURATION
+    config[ps.MULTI_CPU] = False
     config[ps.CALCULATE] = ps.POINTS
     config[ps.POINTS] = {'double click': {ps.LOCATION: point}}
     config[ps.SHOW] = []
+    config[ps.EXPORT_EXCEL] = []
+    config[ps.EXPORT_IMAGES] = []
     # run all calculations
     ps.logger.debug('Running with config %s', config)
     result = pyshield.run(**config)
@@ -82,9 +81,6 @@ def show_floorplan(points = {}, sources = {}):
     #get application data
     floor_plan = ps.config.get_setting(ps.FLOOR_PLAN)
     shielding  = ps.config.get_setting(ps.SHIELDING)
-
-
-
 
     #==========================================================================
     #   Functions to help plotting
@@ -121,19 +117,21 @@ def show_floorplan(points = {}, sources = {}):
         """ Calculate dose at mouse position on double click and display. """
         result = None
         ps.logger.debug('Figure click %s', event)
+        dose = None
         if event.dblclick:
             ps.logger.debug('double click')
             ps.logger.debug(str(event))
-            try:
-                result = calc_dose_at_point((event.xdata, event.ydata))
-            except:
-                print('Error during point calculation!')
-                traceback.print_exc()
+            #try:
+            result = calc_dose_at_point((event.xdata, event.ydata))
+            #except:
+            #    print('Error during point calculation!')
+            #    traceback.print_exc()
 
-            print('{0}'.format(result))
-            print('Total Dose: {0}'.format(np.sum(result[ps.DOSE_MSV])))
-            result.to_excel('output.xslx')
-        return result
+            # print('{0}'.format(result))
+            dose = result[ps.SUM_TABLE][ps.DOSE_MSV][0]
+            print('Total Dose: {0}'.format(dose))
+            # result.to_excel('output.xslx')
+        return dose
 
     def object_click(event):
         """Callback for mouse click on object (source or shielding) """
@@ -322,7 +320,7 @@ def show_floorplan(points = {}, sources = {}):
     fig.canvas.mpl_connect('button_press_event', figure_click)
 
     plt.show(block = False)
-    
+
     return fig
 
 
@@ -376,7 +374,7 @@ def plot_dose_map(dose_map=None, legend=None, title = ''):
     plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
     if legend is not None:
       plt.gca().add_artist(legend)
-      
+
     plt.title(title)
     fig.canvas.set_window_title(title)
     return fig
@@ -400,69 +398,36 @@ def show(results = {}):
 
     if ps.FLOOR_PLAN in show_setting:
         figures[ps.FLOOR_PLAN] = show_floorplan()
-    
+
     sources = {}
     points = {}
-    
+
     if ps.SOURCES in show_setting:
         sources = ps.config.get_setting(ps.SOURCES)
         figures[ps.SOURCES]= show_floorplan(sources = sources)
     if ps.POINTS in show_setting:
         points     = ps.config.get_setting(ps.POINTS)
         figures[ps.POINTS]= show_floorplan(points = points)
-    
+
     if ps.SUM_SOURCES in show_setting or ps.ALL_SOURCES in show_setting:
         try:
             dose_maps = results[ps.DOSE_MAPS]
         except (TypeError, KeyError):
             dose_maps = None
             ps.logger.error('No dose maps found in results')
-        
+
         if ps.SUM_SOURCES in show_setting and dose_maps:
             summed_dose_map = sum_dose_maps(dose_maps.values())
-            figures[ps.FLOOR_PLAN] = plot_dose_map(summed_dose_map, 
+            figures[ps.FLOOR_PLAN] = plot_dose_map(summed_dose_map,
                    title = ps.SUM_SOURCES)
-            
+
         if ps.ALL_SOURCES in show_setting and dose_maps:
             for source, dose_map in dose_maps.items():
                 ps.logger.info('plotting %s', source)
                 figures[source] = plot_dose_map(dose_map, title = source)
-                
+
 
     return figures
-
-def save(figures = None, dose_maps = None):
-    """ Save figures/dose maps to disk. Export dir is defined in application
-        settings."""
-    export_dir = ps.config.get_setting(ps.EXPORT_DIR)
-    save_images = ps.config.get_setting(ps.SAVE_IMAGES)
-
-    makedirs(export_dir, exist_ok=True)
-
-    if save_images:
-        for name, figure in figures.items():
-            file = join(export_dir, name)
-            save_figure(figure, file)
-
-
-#def maximize_window():
-#    """ Maximize the current plot window """
-#    backend = plt.get_backend()
-#    mng = plt.get_current_fig_manager()
-#
-#    # Maximization depends on matplotlib backend
-#    if backend in ( 'Qt4Agg', 'Qt5Agg'):
-#        mng.window.showMaximized()
-#    elif backend == 'wxAgg':
-#        mng.frame.Maximize(True)
-#    elif backend == 'TkAgg':
-#        mng.window.state('zoomed')
-#    elif backend == 'MacOSX':
-#        mng.full_screen_toggle()
-#    else:
-#        msg = 'Cannot maximize a pyplot figure that uses %s as backend'
-#        ps.logger.warn(msg, backend)
-#    return
 
 
 def get_extent(floorplan):
@@ -482,68 +447,9 @@ def get_extent(floorplan):
 
     return extent_cm
 
-def save_figure(fig, source_name):
-    """ save specifed figure to disk, file name gets a time stamp appended"""
-
-    fname = ps.config.get_setting(ps.EXPORT_FNAME)
-    export_dir = ps.config.get_setting(ps.EXPORT_DIR)
-    dpi = ps.config.get_setting(ps.IMAGE_DPI)
-
-    if '{time_stamp}' and '{source_name}' in fname:
-        time_stamp = datetime.strftime(datetime.now(), '_%Y%m%d-%H%M%S')
-        fname = fname.format(time_stamp = time_stamp,
-                             source_name = source_name)
-    else:
-        ps.logger.error('Invalid filename: ' + fname)
-
-    fname = join(ps.config.get_setting(export_dir, fname))
-
-    ps.logger.debug('Writing: ' + fname)
-    fig.savefig(fname, dpi=dpi, bbox_inches='tight')
 
 
 
-def print_dose_report(pandas_table):
-  RED = 31
-  #BLACK = 30
-  BLUE = 34
-  GREEN = 32
-
-  #ANSI CODE for colors
-  colors = "\x1b[1;{color}m"
-  end_color = "\x1b[0m"
-
-
-
-  # tabulated output
-  output = '{:<15}' * 4
-
-  # table header
-  print(output.format('point name',
-                      ps.DOSE_MSV,
-                      ps.DOSE_OCCUPANCY_MSV,
-                      ps.OCCUPANCY_FACTOR))
-
-  # iterate over table and select color based on tresholds
-  for row in pandas_table.iterrows():
-
-    index, data = row
-    if data[ps.DOSE_OCCUPANCY_MSV] > 0.3:
-      color = colors.format(color = RED)
-    elif data[ps.DOSE_OCCUPANCY_MSV] > 0.1:
-      color = colors.format(color = BLUE)
-    else:
-      color = colors.format(color = GREEN)
-
-    # get values for output
-    name = data[ps.POINT_NAME]
-    dose = np.round(data[ps.DOSE_MSV], decimals=2)
-    corrected_dose = np.round(data[ps.DOSE_OCCUPANCY_MSV], decimals = 2)
-    occupancy = data[ps.OCCUPANCY_FACTOR]
-
-    msg =  output.format(name, dose, corrected_dose, occupancy)
-
-    print(color + msg  + end_color)
 
 
 

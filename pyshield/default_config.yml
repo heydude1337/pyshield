@@ -6,8 +6,8 @@ log: 'debug'               # set to debug or info
 # Calculations options
 #==============================================================================
 pythagoras: True          # True or False
-disable_buildup: False     # if True buildup is set 1 for all calculations
-multi_cpu: False          # Divide workload over the available CPU cores
+disable_buildup: False    # if True buildup is set 1 for all calculations
+multi_cpu: True           # Divide workload over the available CPU cores
 grid_size: 10             # grid spacing for cartesian grid or radial sampling for polor grid
 number_of_angles: 90      # angles used for sampling polar grid
 grid: polar               # cartesian or polar grid
@@ -19,6 +19,29 @@ origin:                   # arbritrary origin in floor plan in cm
  - 0
  - 0
 
+#==============================================================================
+#  Input and output for calculations
+#==============================================================================
+
+# files are found in the current working directory. Files are loaded if they
+# are found in the specified path. By default the following files will be
+# tried from the local working directory
+
+barriers: barriers.yml      # barrier definitions
+points: points.yml          # dose points definitions
+sources: sources.yml        # source definitions
+
+
+# simulate a floor by specifying this as a barrier
+# e.g. floor:
+#        Concrete: 20
+#  Simunlates a 20 cm concrete floor
+floor: {}
+
+height: 0  # Use in conjuction with floor, this specifies the distance to the other
+# floor from the source
+
+export_dir: './output/'
 
 #==============================================================================
 #  Display options
@@ -38,30 +61,16 @@ isocontour_lines:         # mSv vs any valid matplotlib color
   5: magenta
   12: darkmagenta
 
-# Disable visualization (None)
-# Show summed (Sum)
-# Show individual plots for each source (All)
-show: ['sum_sources', 'floor_plan'] # sum_sources, floor_plan or all_sources is valid
+# sum_sources: Show a dose map of the summed contributions of all sources
+# all_sources: Show a dose map of each individual source
+# sources: Show the floorplan with labels for each source
+# points: Show the floorplan with a label next to each dose point
+# floor_plan: Show the floor_plan with barriers
+# sum_table: display formatted table in (i)python console
+show: ['sum_sources', 'floor_plan', 'sources', 'points', 'sum_table']
 
-# optional: file that defines the colors of each material and thickness
-material_colors: colors.yml
-#==============================================================================
-#  Input and output for calculations
-#==============================================================================
-
-# files are found in the current working directory. Files are loaded if they
-# are found in the specified path. By default the following files will be
-# tried from the local working directory
-
-barriers: barriers.yml      # barrier definitions
-points: points.yml          # points definitions
-sources: sources.yml        # source definitions
+material_colors: colors.yml # File that specifies the colors for the barriers
 floor_plan: floor_plan.png  # Floor plan of the room/facility
-
-
-floor: {}                 # simulate a floor by specifying this as a barrier
-height: 0                 # simulate a floor above or below by specifying height
-export_dir: './output/'
 
 #==============================================================================
 # Export options
@@ -69,5 +78,6 @@ export_dir: './output/'
 
 # Files are saved in the current working directory
 export_excel: True
+export_images: True
 excel_filename_summary: summed_result.xlsx
 excel_filename_fullresult: full_result.xlsx
