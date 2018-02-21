@@ -107,7 +107,7 @@ def load_file(file):
     if is_yaml(file):
         reader = read_yaml
     elif is_excel(file):
-        reader = lambda f: pd.read_excel(f, sheetname=None)  # read all sheets
+        reader = lambda f: pd.read_excel(f, sheet_name=None)  # read all sheets
     elif is_img(file):
         reader = lambda f: np.flipud(mpimg.imread(f))
     else:
