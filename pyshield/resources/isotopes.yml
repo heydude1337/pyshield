@@ -117,7 +117,12 @@ F-18 Patient:
   Abundance:
     - 1.11  # 2 * (0.092 / 0.166)
 
-
+X-RAY:
+    labda [s^-1]: 1
+    Energy [keV]:
+      - 80
+    Abundance:
+      - 1
 
 
 Ga-68:

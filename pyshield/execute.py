@@ -33,7 +33,8 @@ def run_with_configuration(config=None, **kwargs):
         ps.logger.debug('Loading config file %s', config)
         config = ps.io.read_yaml(config)
     else:
-        raise FileNotFoundError(config + ' not found in current folder.')
+        #raise FileNotFoundError(config + ' not found in current folder.')
+        config = {}
 
     # overwite settings with kwargs
     config.update(kwargs)
