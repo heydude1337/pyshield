@@ -350,7 +350,8 @@ def u_linear(energy_keV, material):
     interp_fcn = interp.interp1d(energies, mu_p)
 
     mu_p_i = interp_fcn(energy_keV / 1e3)
-
+    msg = 'Interpolated Mass attenuation coefficient {0}'
+    ps.logger.debug(msg.format(mu_p_i))
     p = ps.RESOURCES[ps.MATERIALS][material][ps.DENSITY]
 
     return mu_p_i * p
