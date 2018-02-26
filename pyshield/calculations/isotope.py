@@ -74,7 +74,7 @@ def equivalent_activity(source):
             ps.logger.debug('ndesint %s',ndesintegrations)
         else:
             # calculate the number of desintegrations without decay correction
-            ndesintegrations = activity_MBq * times_per_year * duration_h * 3600
+            ndesintegrations = activity_MBq * 1e6 * times_per_year * duration_h * 3600
 
         eq_activity = ndesintegrations/3600/1E6
         ps.logger.debug('Equivalent Activity: %s', eq_activity)
