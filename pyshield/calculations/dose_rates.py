@@ -125,16 +125,15 @@ def linear_energy_absorption_coeff_air(energy_keV):
 
 if __name__ == "__main__":
     #http://cdn.intechopen.com/pdfs-wm/32834.pdf
-    from pyshield import CONST
-    from pyshield import RESOURCES
-    isotopes = RESOURCES[CONST.ISOTOPES]
+    import pyshield as ps
+    isotopes = ps.RESOURCES[ps.ISOTOPES]
     dose_rates = {}
     for isotope in isotopes.keys():
         try:
-          dose_rates[isotope] = H10(isotopes[isotope][CONST.ENERGY_keV],
-                    isotopes[isotope][CONST.ABUNDANCE])
+          dose_rates[isotope] = H10(isotopes[isotope][ps.ENERGY_keV],
+                    isotopes[isotope][ps.ABUNDANCE])
 
-          print(str(dose_rates[isotope]/isotopes[isotope][CONST.H10] * 100) + \
+          print(str(dose_rates[isotope]/isotopes[isotope][ps.H10] * 100) + \
                 '% ' 'accurate for {0}'.format(isotope))
         except KeyError:
           pass

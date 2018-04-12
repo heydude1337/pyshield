@@ -2,11 +2,33 @@ Lu-177:
   h(10) [uSv/h per MBq/m^2]:  0.0063
   labda [s^-1]: 1.2e-6
   Energy [keV]:
+    - 55.79
+    - 63 # two peaks combined
     - 112.948
     - 208.37
   Abundance:
+    - 2.77E-2
+    - 0.91E-2
     - 6.17e-2
     - 10.36e-2
+
+#bron NETTER-1 studie gemiddelde biologiesche klaring 50% in eerste 24h
+# LABDA_BIOL = log(2)/(24*3600) = 8.02E-6
+# LABDA_SUM = LABDA_BIOL + LABDA_FYS = 9.2E-6
+Lu-177 Patient:
+  h(10) [uSv/h per MBq/m^2]:  0.0063
+  labda [s^-1]: 9.2e-6
+  Energy [keV]:
+    - 55.79
+    - 63 # two peaks combined
+    - 112.948
+    - 208.37
+  Abundance:
+    - 2.77E-2
+    - 0.91E-2
+    - 6.17e-2
+    - 10.36e-2
+
 Lu-177m:
   labda [s^-1]: 5.00e-8
   Energy [keV]:
@@ -36,39 +58,44 @@ Lu-177m:
 Lu-177 Betij Tank:
   labda [s^-1]: 1.2e-6
   Energy [keV]:
+    - 55.79
+    - 63
     - 112.948
     - 208.37
   Abundance:
-    - 0.0028
-    - 0.0056
+    - 1.08E-03
+    - 3.74E-04
+    - 3.07E-03
+    - 6.22E-03
+
 
 I-131:
   h(10) [uSv/h per MBq/m^2]:  0.066
   labda [s^-1]: 1.0e-6
   Energy [keV]:
- #   - 80.185
- #   - 284.305
+    - 80.185
+    - 284.305
     - 364.489
     - 636.989
  #   - 722.911
   Abundance:
- #   - 2.62e-2
- #   - 6.12e-2
+    - 2.62e-2
+    - 6.12e-2
     - 81.5e-2
     - 7.16e-2
  #   - 1.77e-2
 I-131 Body:
   h(10) [uSv/h per MBq/m^2]:  0.034
-  labda [s^-1]: 1.0e-6
+  labda [s^-1]: 2.41e-5         # 8 hours halflife
   Energy [keV]:
-#    - 80.185
-#    - 284.305
+    - 80.185
+    - 284.305
     - 364.489
     - 636.989
 #    - 722.911
   Abundance: # reduction by factor 2 of 365 keV
- #   - 2.62e-2
- #   - 6.12e-2
+    - 2.62e-2
+    - 6.12e-2
     - 41.0e-2
     - 7.16e-2
  #   - 1.77e-2
@@ -76,14 +103,14 @@ I-131 Thyroid:
   h(10) [uSv/h per MBq/m^2]:  0.045
   labda [s^-1]: 1.0e-6
   Energy [keV]:
- #   - 80.185
+    - 80.185
     - 284.305
     - 364.489
- #   - 636.989
+    - 636.989
  #   - 722.911
   Abundance: # reduction by factor 1.5 for 365 keV
- #   - 2.62e-2
- #   - 6.12e-2
+    - 2.62e-2
+    - 6.12e-2
     - 55.0e-2
     - 7.16e-2
  #   - 1.77e-2
@@ -94,13 +121,20 @@ I-131 Betij Tank:
     - 284.305
     - 364.489
     - 636.989
-    - 722.911
+ #   - 722.911
   Abundance:
-    - 0.0010357
-    - 0.00369563
-    - 0.05423084
-    - 0.006051310
-    - 0.0015824
+    - 1.18E-03
+    - 4.08E-03
+    - 5.94E-02
+    - 6.52E-03
+
+
+#  Abundance:
+#    - 0.0010357
+#    - 0.00369563
+#    - 0.05423084
+#    - 0.006051310
+#    - 0.0015824
 F-18:
   h(10) [uSv/h per MBq/m^2]: 0.166
   labda [s^-1]: 1.05e-4
@@ -124,7 +158,24 @@ X-RAY:
     Abundance:
       - 1
 
-
+# 1.	Flower MA, Fielding SL: Radiation dosimetry for 131I-mIBG therapy of neuroblastoma. Physics in medicine and biology 1996, 41(10):1933-1940.
+# MIBG effective halflife 6.8h
+# Using same h(10) as for I-131 thyroid, thyroid is a superficial orgen --> worst case
+I-131 MIBG Patient:
+  h(10) [uSv/h per MBq/m^2]:  0.045
+  labda [s^-1]: 2.83E-5 # Thalf 6.8h
+  Energy [keV]:
+    - 80.185
+    - 284.305
+    - 364.489
+    - 636.989
+ #   - 722.911
+  Abundance: # reduction by factor 1.5 for 365 keV
+    - 2.62e-2
+    - 6.12e-2
+    - 55.0e-2
+    - 7.16e-2
+ #   - 1.77e-2
 Ga-68:
   h(10) [uSv/h per MBq/m^2]: 0.16
   labda [s^-1]: 2.79e-8
@@ -152,3 +203,41 @@ Ge-68 Generator:
   Abundance:
     - 0.3115
     - 0.001780
+
+## 1.	Prince JF, Smits ML, Krijger GC, Zonnenberg BA, van den Bosch MA, Nijsen JF, Lam MG: Radiation emission from patients treated with holmium-166 radioembolization.
+## Journal of vascular and interventional radiology : JVIR 2014, 25(12):1956-1963.e1951.
+#Ho-166 Patient:
+#  h(10) [uSv/h per MBq/m^2]: 0.0088 # estimated 40 uSv/h for a 60 Gy therapy dose (Figure 1.), median injected activity 4510 MBq (Table 2)
+#  labda [s^-1]: 7.18E-6
+#  Energy [keV]:
+#    - 48.221
+#    - 49.128
+#    - 55.48
+#    - 55.674
+#    - 80.576
+#    - 1379.437
+#    #
+#  Abundance:
+#    - 2.96E-2
+#    - 5.21E-2
+#    - 0.555E-2
+#    - 1.07E-2
+#    - 6.56E-2
+#    - 0.922E-2
+    #
+
+Ho-166:
+  h(10) [uSv/h per MBq/m^2]: 0.005 # estimated 40 uSv/h for a 60 Gy therapy dose (Figure 1.), median injected activity 4510 MBq (Table 2)
+  labda [s^-1]: 7.18E-6
+  Energy [keV]:
+    - 48.6 # two close peaks summed
+    - 56 # two close peaks summed
+    - 80.576
+    - 1379.437
+    - 1581.834
+  Abundance:
+    - 2.96E-2
+    - 6.84E-2
+    - 6.56E-2
+    - 0.922E-2
+    - 0.182E-2
