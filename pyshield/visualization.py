@@ -297,8 +297,8 @@ def show_floorplan(points = {}, sources = {}):
 
 
 
-
-    ps.logger.debug(sources.keys())
+    if sources:
+        ps.logger.debug(sources.keys())
     draw_barriers(shielding) # plot shielding baririers
     draw_sources(sources)    # plot sources
     draw_points(points)      # points
@@ -392,22 +392,27 @@ def show(results = {}):
         show_setting = [show_setting]
 
     ps.logger.debug('%s dose_maps loaded for visualization', len(results))
-    ps.logger.debug('Showing %s dose_maps', show_setting)
+    ps.logger.debug('Showing %s', show_setting)
 
     figures = {}
 
     if ps.FLOOR_PLAN in show_setting:
         figures[ps.FLOOR_PLAN] = show_floorplan()
 
-    sources = {}
-    points = {}
-
-    if ps.SOURCES in show_setting:
-        sources = ps.config.get_setting(ps.SOURCES)
+    sources = ps.config.get_setting(ps.SOURCES)
+    points = ps.config.get_setting(ps.POINTS)
+    ps.logger.debug('%i sources found', len(sources))
+    ps.logger.debug('%i points found', len(points))
+    if sources and ps.SOURCES in show_setting\
+        and points and ps.POINTS in show_setting:
+        figures[ps.SOURCES]= show_floorplan(sources = sources, points=points)
+    elif sources and ps.SOURCES in show_setting:
         figures[ps.SOURCES]= show_floorplan(sources = sources)
-    if ps.POINTS in show_setting:
-        points     = ps.config.get_setting(ps.POINTS)
+    elif points and ps.POINTS in show_setting:
         figures[ps.POINTS]= show_floorplan(points = points)
+    elif show_setting is not None:
+        figures[ps.FLOOR_PLAN]= show_floorplan()
+
 
     if ps.SUM_SOURCES in show_setting or ps.ALL_SOURCES in show_setting:
         try:

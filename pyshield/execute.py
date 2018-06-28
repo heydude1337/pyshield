@@ -42,7 +42,8 @@ def run_with_configuration(config=None, **kwargs):
 
     # change log level based on config file
     ps.log.set_log_level(ps.config.get_setting(ps.LOG))
-
+    ps.logger.debug('Source file: %s', ps.config.get_setting('sources'))
+    ps.logger.info('Working directory: %s', os.getcwd())
     # display all parameters in debug
     ps.logger.debug(ps.config.__str__())
 
@@ -241,7 +242,7 @@ def _get_worker():
 
     if ps.config.get_setting(ps.MULTI_CPU):
         if not(os.name == 'posix'):
-            raise multiprocessing.ProcessError('Not available in Windows')
+            raise RuntimeError('Multi processing not available in Windows')
 
         pool = multiprocessing.ProcessPool(NCORES)
         worker = pool.map

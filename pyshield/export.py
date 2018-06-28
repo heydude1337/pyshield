@@ -12,16 +12,18 @@ def export(results):
     def export_table(table, file_name):
         # Write pandas table to disk
         if table is not None:
-            table.to_excel(os.path.join(export_dir, file_name))
+            file = os.path.join(export_dir, file_name)
+            ps.logger.debug('writing: %s', file)
+            table.to_excel(file)
 
 
     # export tables to excel
-    if ps.config.get_setting(ps.EXPORT_EXCEL):
+    if ps.config.get_setting(ps.EXPORT_EXCEL) and results[ps.SUM_TABLE] is not None:
 
         export_table(results[ps.SUM_TABLE],
                      ps.config.get_setting(ps.EXCEL_FILENAME_SUMMARY))
 
-
+    if ps.config.get_setting(ps.EXPORT_EXCEL) and results[ps.TABLE] is not None:
         export_table(results[ps.TABLE],
                      ps.config.get_setting(ps.EXCEL_FILENAME_FULLRESULT))
 

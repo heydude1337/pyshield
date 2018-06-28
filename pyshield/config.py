@@ -95,6 +95,7 @@ def set_setting(key, value):
         try:
             value = ps.io.read_yaml(value)
         except FileNotFoundError:
+            ps.logger.debug('File not found: %s', value)
             value = {}
         CONFIG[key] = value
     elif ps.io.is_img(value):

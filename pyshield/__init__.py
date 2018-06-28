@@ -6,8 +6,8 @@ from pyshield.constants import *
 
 from pyshield.log import logger
 from pyshield.calculations import isotope, grid, barrier, line_intersect
-from pyshield.Tools import drawing
-from pyshield import log, io, config, calculations, Tools, visualization, export
+from pyshield.tools import drawing
+from pyshield import log, io, config, calculations, tools, visualization, export
 from pyshield.execute import run_with_configuration as run
 
 

@@ -82,6 +82,8 @@ def equivalent_activity(source):
         eq_activity = source[ps.ACTIVITY_H]
     elif ps.DESINT in source.keys():
         eq_activity = source[ps.DESINT]/3600/1E6
+    else:
+        raise ValueError('Insufficient information to integrate dose')
 
     return eq_activity
 
