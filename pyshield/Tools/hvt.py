@@ -25,8 +25,9 @@ def dose(isotope = 'I-131',
                      #area             = [200, 200],
                      log              = logging.ERROR,
                      multi_cpu     = False,
-                     show = 'none',
-                     disable_buildup = False,
+                     show = False,
+                     export_excel=False,
+                     # disable_buildup = False,
                      #debug = 'info',
                      **kwargs)
 
@@ -34,10 +35,17 @@ def dose(isotope = 'I-131',
 
 
 def shielding_factor(isotope = 'Lu-177', material = 'Lead' , thickness = 1, **kwargs):
-  barrier = {'barrier' : {ps.MATERIAL: {material: thickness},
-                          ps.LOCATION: [-50, 50, 50, 50]}}
+    if not isinstance(material, (list, tuple)):
+        barriers = {material: thickness}
+        
+    else:
+        
+        barriers = dict(zip(material, thickness))
+    
+    barrier = {'barrier' : {ps.MATERIAL: barriers,
+                            ps.LOCATION: [-50, 50, 50, 50]}}
 
-  return dose(isotope = isotope, barrier=barrier) / dose(isotope=isotope, **kwargs)
+    return dose(isotope = isotope, barrier=barrier) / dose(isotope=isotope, **kwargs)
 
 def shielding_thickness(isotope, material, factor = 0.5):
   """ Find half value thickness for isotope and material by optimization """
@@ -50,26 +58,29 @@ def shielding_thickness(isotope, material, factor = 0.5):
   return r[0]
 
 
-nhvt = np.arange(0.1, 20, step = 0.5)
-def hvt(material = 'Lead' , isotope = 'I-131'):
-
-  thickness = np.array([shielding_thickness(isotope, material, factor = 0.5**ni)\
-                        / ni for ni in nhvt])
+# 
+def hvt(material = 'Lead' , isotope = 'I-131', nhvt=1):
+  thickness = shielding_thickness(isotope, material, factor = 0.5**nhvt)
+                        
   return thickness
 
+def tvt(material='Lead', isotope = 'I-131'):
+    return shielding_thickness(isotope, material, factor = 0.1)
+
 if __name__ == "__main__":
-  materials = list(ps.RESOURCES[ps.MATERIALS].keys())
-  p=Pool()
-  isotope = 'I-131'
-  hvt_material = partial(hvt, isotope = isotope)
-  thickness = p.map(hvt_material, materials)
-
-  for t, material in zip(thickness, materials):
-    plt.plot(nhvt, t, label = material)
-
-  plt.legend()
-  plt.xlabel('Number of half value layers')
-  plt.ylabel('Half value layer thickness [cm]')
+    pass
+#      materials = list(ps.RESOURCES[ps.MATERIALS].keys())
+#      p=Pool()
+#      isotope = 'I-131'
+#      hvt_material = partial(hvt, isotope = isotope)
+#      thickness = p.map(hvt_material, materials)
+#    
+#      for t, material in zip(thickness, materials):
+#    plt.plot(nhvt, t, label = material)
+#    
+#      plt.legend()
+#      plt.xlabel('Number of half value layers')
+#      plt.ylabel('Half value layer thickness [cm]')
 
 
 #shielding_thickness(isotope = 'I-131', material = 'Robalith 3.7', factor = 0.096)

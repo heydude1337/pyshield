@@ -1,0 +1,38 @@
+dose_map:
+  clim: [0, 10] # Limits for the colorscale of the heatmap in mSv  
+  color_map: afmhot          # colormap for heatmap
+  lines:         # mSv vs any valid matplotlib color
+    0.1: lightgreen
+    0.3: darkgreen
+    0.4: lightblue
+    1.2: darkblue
+    1.67: red
+    4: darkred
+    5: magenta
+    12: darkmagenta
+  font_size: 10 # font size on isocontour line
+  
+table:
+  dose_limit_blue: 0.1
+  dose_limit_red: 0.3
+
+barrier:
+  color: 'blue'
+  line_style: '-'
+  line_width: 2
+  colors: colors.yml # File that maps a label or material to a color
+  
+source:
+  color: 'red'
+  marker: 'o'
+  alignment: 'top left'
+  text_size: 10
+point:
+  color: 'blue'
+  marker: 'o'
+  alignment: 'top left'
+  text_size: 10
+
+figure:
+  legend_location: 4
+  fig_size: [15, 15]

@@ -1,44 +1,69 @@
 # -*- coding: utf-8 -*-
 import pyshield as ps
 import numpy as np
+import pandas as pd
 import os
 
-def export(results):
+def export_images(results):
     """ Export calculation results to file. """
-    # export folder, create if not exists
-    export_dir = ps.config.get_setting(ps.EXPORT_DIR)
-    os.makedirs(export_dir, exist_ok = True)
-
-    def export_table(table, file_name):
-        # Write pandas table to disk
-        if table is not None:
-            file = os.path.join(export_dir, file_name)
-            ps.logger.debug('writing: %s', file)
-            table.to_excel(file)
-
-
-    # export tables to excel
-    if ps.config.get_setting(ps.EXPORT_EXCEL) and results[ps.SUM_TABLE] is not None:
-
-        export_table(results[ps.SUM_TABLE],
-                     ps.config.get_setting(ps.EXCEL_FILENAME_SUMMARY))
-
-    if ps.config.get_setting(ps.EXPORT_EXCEL) and results[ps.TABLE] is not None:
-        export_table(results[ps.TABLE],
-                     ps.config.get_setting(ps.EXCEL_FILENAME_FULLRESULT))
-
+    export_dir = export_folder()
+    
+    
     # export images to png
-    if ps.config.get_setting(ps.EXPORT_IMAGES):
+    if ps.FIGURE in results.keys():
         for key, figure in results[ps.FIGURE].items():
             figure.savefig(os.path.join(export_dir, key + '.png'))
 
-    # print results to console
-    if ps.SUM_TABLE in ps.config.get_setting(ps.SHOW):
-        if results[ps.SUM_TABLE] is not None:
-            ps.export.print_dose_report(results[ps.SUM_TABLE])
+def export_folder():
+    export_dir = ps.config.get_setting(ps.EXPORT_DIR)
+    export_dir = os.path.realpath(export_dir)
+    # keep install location clean during testing etc.
+    pkg_folder = os.path.normpath(ps.__pkg_root__.lower()).lower()
+    if pkg_folder in export_dir.lower():
+        raise IOError('Files cannot be exported to pyshield install location')
+    
+    os.makedirs(export_dir, exist_ok = True)
+    return export_dir
 
-
-def print_dose_report(pandas_table):
+def export_excel(results):
+    """ Write pandas tables to disk """
+    
+    export_dir = export_folder()
+    
+    
+    file = os.path.join(export_dir,
+                        ps.config.get_setting(ps.EXCEL_FILENAME))
+    
+    writer = pd.ExcelWriter(file, engine='xlsxwriter')
+    
+    results[ps.SOURCE_TABLE] = make_source_table()
+    
+    for key in (ps.SUM_TABLE, ps.TABLE, ps.SOURCE_TABLE):
+        if key in results.keys():
+            try:
+                results[key].to_excel(writer, sheet_name=key)
+                ps.logger.debug('%s written to excel', key)
+            except:
+                msg = 'Cannot write {0} to {1}'
+                ps.logger.error(msg.format(key, ps.EXCEL_FILENAME_SUMMARY))
+        else:
+            ps.logger.debug('{0} not found in results'.format(key))
+    writer.save()
+    
+def make_source_table():
+    """ Create pandas table from source file for nice export """
+    df = pd.DataFrame()
+    sources = ps.config.get_setting('sources')
+    for name, source in sources.items():
+        df = df.append({'Name': name, **source}, ignore_index=True)
+    return df
+        
+def print_dose_report(result):
+    """ Print report table to commandline """
+    if not ps.SUM_TABLE in result.keys():
+        return
+    pandas_table = result[ps.SUM_TABLE]
+    style = ps.visualization.item_style({}, item_type=ps.TABLE)
     RED = 31
     #BLACK = 30
     BLUE = 34
@@ -48,24 +73,22 @@ def print_dose_report(pandas_table):
     colors = "\x1b[1;{color}m"
     end_color = "\x1b[0m"
 
-
-
     # tabulated output
-    output = '{:<15}' * 4
+    output = '{:<20}' * 4
 
     # table header
     print(output.format('point name',
-                        ps.DOSE_MSV,
-                        ps.DOSE_OCCUPANCY_MSV,
-                        ps.OCCUPANCY_FACTOR))
+                        ps.DOSE_MSV,                        
+                        ps.OCCUPANCY_FACTOR,
+                        ps.DOSE_OCCUPANCY_MSV))
 
     # iterate over table and select color based on tresholds
     for row in pandas_table.iterrows():
 
       index, data = row
-      if data[ps.DOSE_OCCUPANCY_MSV] > 0.3:
+      if data[ps.DOSE_OCCUPANCY_MSV] > style[ps.DOSE_LIMIT_RED]:
           color = colors.format(color = RED)
-      elif data[ps.DOSE_OCCUPANCY_MSV] > 0.1:
+      elif data[ps.DOSE_OCCUPANCY_MSV] > style[ps.DOSE_LIMIT_BLUE]:
           color = colors.format(color = BLUE)
       else:
           color = colors.format(color = GREEN)
@@ -76,6 +99,6 @@ def print_dose_report(pandas_table):
       corrected_dose = np.round(data[ps.DOSE_OCCUPANCY_MSV], decimals = 2)
       occupancy = data[ps.OCCUPANCY_FACTOR]
 
-      msg =  output.format(name, dose, corrected_dose, occupancy)
+      msg =  output.format(name, dose, occupancy, corrected_dose)
 
       print(color + msg  + end_color)

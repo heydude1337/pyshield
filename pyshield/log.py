@@ -7,7 +7,7 @@ Created on Thu Feb 18 00:27:58 2016
 
 import logging
 import pyshield as ps
-
+import os
 LOG_FILE = 'pyshield.log'
 LOG_LEVEL = logging.DEBUG
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -52,11 +52,19 @@ def set_log_level(loglevel_str):
     for handler in logger.handlers:
         handler.setLevel(level)
     logger.setLevel(level)
-
+    
+# Keep install location clean
+pkg_folder = os.path.normpath(ps.__pkg_root__).lower()
+if  pkg_folder in os.path.normpath(os.getcwd()).lower():
+    fname = None
+else:
+    fname = LOG_FILE
+    
 logger = application_logger(app_name='pyshield',
-                           fname=LOG_FILE,
+                           fname=fname,
                            log_level=logging.INFO,
                            log_to_console=True)
 
-
+if fname is None:
+    logger.debug('Log to file is disabled')
 

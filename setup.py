@@ -9,19 +9,33 @@ Created on Sun Nov 26 12:56:47 2017
 from setuptools import setup
 
 README = 'README.md'
-VERSION = 0.11
+VERSION = 0.132
 DESCRIPTION = ('Pyshield is a package for nuclear medicine departments to'
-               'calculate the necessary amount of shielding.')
+               'calculate the necessary amount of shielding for'
+               'radionuclide labs, pet and spect scanners.')
 
 NAME = 'pyshield'
 
+PACKAGES = ['pyshield', 
+            'pyshield.calculations', 
+            'pyshield.physics', 
+            'pyshield.tools']
 
-
+REQUIRES = ['pandas', 
+            'natsort', 
+            'numpy',
+            'scipy', 
+            'pyyaml', 
+            'xlsxwriter', 
+            'matplotlib', 
+            'openpyxl',
+            'pathos',
+            'shutil',
+            'argparse']
 
 def readme():
     with open(README) as f:
         return f.read()
-
 
 setup(name=NAME,
       version=VERSION,
@@ -40,9 +54,8 @@ setup(name=NAME,
       author='HeyDude',
       author_email='heydude1337@gmail.com',
       license='MIT',
-      packages=['pyshield', 'pyshield.calculations', 'pyshield.resources', 'pyshield.tools'],
-      install_requires=[
-          'pandas', 'natsort', 'numpy', 'scipy', 'pyyaml', 'xlrd', 'matplotlib', 'openpyxl'
-      ],
+      packages=PACKAGES,
+      install_requires=REQUIRES,
       include_package_data=True,
-      zip_safe=False)
+      zip_safe=False,
+      entry_points={'console_scripts':['pyshield=pyshield.__main__:main']})

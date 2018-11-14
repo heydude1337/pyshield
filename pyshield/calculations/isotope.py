@@ -12,7 +12,7 @@ import pyshield as ps
 
 from pyshield.calculations.barrier import sum_shielding_line, add_barriers
 from pyshield.calculations.dose_rates import H10
-
+DEBUG = False
 
 def equivalent_activity(source):
     """
@@ -45,7 +45,7 @@ def equivalent_activity(source):
         # activity and duration specified
         activity_MBq = source[ps.ACTIVITY]
         duration_h   = source[ps.DURATION]
-
+        
         if ps.NUMBER_OF_EXAMS in source.keys():
             # optional the number of times per year is specified
             times_per_year = source[ps.NUMBER_OF_EXAMS]
@@ -62,22 +62,25 @@ def equivalent_activity(source):
 
         if decay_corr:
             # calculate the number of desintegrations with decau correction
-            labda = ps.RESOURCES[ps.ISOTOPES][isotope][ps.LABDA]
-            ps.logger.debug('Isope %s', source[ps.ISOTOPE])
-            ps.logger.debug('Activity_MBq  %s', source[ps.ACTIVITY])
-            ps.logger.debug('Duration_h %s', source[ps.DURATION])
-            ps.logger.debug('Times_per_year %s', source[ps.NUMBER_OF_EXAMS])
-            ps.logger.debug('Labda %s', labda)
+            labda = ps.config.get_setting(ps.ISOTOPES)[isotope][ps.LABDA]
+            if DEBUG:
+                ps.logger.debug('Isope %s', source[ps.ISOTOPE])
+                ps.logger.debug('Activity_MBq  %s', source[ps.ACTIVITY])
+                ps.logger.debug('Duration_h %s', source[ps.DURATION])
+                ps.logger.debug('Times_per_year %s', source[ps.NUMBER_OF_EXAMS])
+                ps.logger.debug('Labda %s', labda)
 
             ndesintegrations = activity_MBq * 1e6 * times_per_year *\
                                1/labda * (1 - np.exp(-labda*duration_h*3600))
-            ps.logger.debug('ndesint %s',ndesintegrations)
+            if DEBUG:
+                ps.logger.debug('ndesint %s',ndesintegrations)
         else:
             # calculate the number of desintegrations without decay correction
             ndesintegrations = activity_MBq * 1e6 * times_per_year * duration_h * 3600
 
         eq_activity = ndesintegrations/3600/1E6
-        ps.logger.debug('Equivalent Activity: %s', eq_activity)
+        if DEBUG:
+            ps.logger.debug('Equivalent Activity: %s', eq_activity)
     elif ps.ACTIVITY_H in source.keys():
         eq_activity = source[ps.ACTIVITY_H]
     elif ps.DESINT in source.keys():
@@ -101,9 +104,10 @@ def dose_rate_point_source(distance_meters):
   return 1/d**2
 
 
-def calc_dose_source_at_location(source, location, shielding,
+def calc_dose_source_at_location(source, location, barriers,
                                  height = 0, disable_buildup = False,
-                                 pythagoras = True, return_details = False,
+                                 intersection_thickness = True, 
+                                 return_details = False,
                                  floor = {}):
 
     """" Calculates the dose that will be measured in location given a source
@@ -113,7 +117,7 @@ def calc_dose_source_at_location(source, location, shielding,
 
         source:     dictonary specifying the source properties
         location:   x, y coordinates for which the dose is calculated
-        shielding:  dictonary containing all shielding elements.
+        barriers:  dictonary containing all shielding elements.
 
      Returns:
          dose_mSv: the total summed dose for the source at the specified
@@ -125,14 +129,14 @@ def calc_dose_source_at_location(source, location, shielding,
 
 
     A_eff = equivalent_activity(source)
-
-    ps.logger.debug('Source location: %s', source_location)
-    ps.logger.debug('Grid location: %s', location)
-    ps.logger.debug('Height: %s', height)
+    if DEBUG:
+        ps.logger.debug('Source location: %s', source_location)
+        ps.logger.debug('Grid location: %s', location)
+        ps.logger.debug('Height: %s', height)
 
     # obtain total shielding between source location and the given location
     sum_shielding=sum_shielding_line(source_location, location,
-                                     shielding, pythagoras)
+                                     barriers, intersection_thickness)
 
     #include shielding from source
     sum_shielding = {**sum_shielding, **source.get(ps.MATERIAL,{})}
@@ -160,8 +164,8 @@ def calc_dose_source_at_location(source, location, shielding,
 
     # calculate the dose for the location
     dose_mSv = A_eff * h10 * rel_strength / 1000
-
-    ps.logger.debug('height: %s | h10: %s | dose_mSv: %s', height, h10, dose_mSv)
+    if DEBUG:
+        ps.logger.debug('height: %s | h10: %s | dose_mSv: %s', height, h10, dose_mSv)
     # add calculations details to a table if one was passed to this function
     if return_details:
         details = {}
@@ -175,9 +179,9 @@ def calc_dose_source_at_location(source, location, shielding,
         details[ps.H10]                      = h10
         details[ps.TOTAL_SHIELDING]          = str(sum_shielding)
         details[ps.SOURCE_POINT_DISTANCE]    = d_meters
-        details['Dose [mSv] per Energy']        = dose_mSv
+        details[ps.DOSE_MSV_PER_ENERGY]      = dose_mSv
         details[ps.DOSE_MSV]                 = np.sum(dose_mSv)
-        details[ps.PYTHAGORAS]               = pythagoras
+        details[ps.INTERSECTION_THICKNESS]   = intersection_thickness
         details[ps.HEIGHT]                   = height
 
         return details
@@ -195,13 +199,13 @@ def dose_rate(sum_shielding, isotope, disable_buildup = False):
     """
 
     t         = transmission_sum(sum_shielding, isotope, disable_buildup)
-    energies  = ps.RESOURCES[ps.ISOTOPES][isotope][ps.ENERGY_keV]
-    abundance = ps.RESOURCES[ps.ISOTOPES][isotope][ps.ABUNDANCE]
-
-    ps.logger.debug(isotope)
-    ps.logger.debug('t: %s', t)
-    ps.logger.debug('energies: %s', energies)
-    ps.logger.debug('abundance: %s', abundance)
+    energies  = ps.config.get_setting(ps.ISOTOPES)[isotope][ps.ENERGY_keV]
+    abundance = ps.config.get_setting(ps.ISOTOPES)[isotope][ps.ABUNDANCE]
+    if DEBUG:
+        ps.logger.debug(isotope)
+        ps.logger.debug('t: %s', t)
+        ps.logger.debug('energies: %s', energies)
+        ps.logger.debug('abundance: %s', abundance)
 
     rate = H10(energy_keV=energies, abundance=t * np.array(abundance))
 
@@ -227,11 +231,12 @@ def transmission_sum(sum_shielding, isotope, disable_buildup = False):
 
      """
     #ignore_buildup = get_setting(ps.DISABLE_BUILDUP)
-    energies = ps.RESOURCES[ps.ISOTOPES][isotope][ps.ENERGY_keV]
+    energies = ps.config.get_setting(ps.ISOTOPES)[isotope][ps.ENERGY_keV]
     energies = np.array(energies)
     t = np.ones(len(energies))
     for material, thickness in sum_shielding.items():
-        ps.logger.debug('transmission through %s cm %s', thickness, material)
+        if DEBUG:
+            ps.logger.debug('transmission through %s cm %s', thickness, material)
         t *= transmission(isotope, material, thickness, disable_buildup)
     return t
 
@@ -246,7 +251,7 @@ def transmission(isotope, material, thickness, disable_buildup=False):
         Returns:
             t: transmission factor (float)
     """
-    energies = ps.RESOURCES[ps.ISOTOPES][isotope][ps.ENERGY_keV]
+    energies = ps.config.get_setting(ps.ISOTOPES)[isotope][ps.ENERGY_keV]
     energies = np.array(energies)
 
 
@@ -257,7 +262,8 @@ def transmission(isotope, material, thickness, disable_buildup=False):
 
     t = attenuation(energies, material, thickness)
     msg = 'Attenuation for %s with thickness %s and energies %s: %s'
-    ps.logger.debug(msg, material, thickness, energies, t)
+    if DEBUG:
+        ps.logger.debug(msg, material, thickness, energies, t)
 
     if not disable_buildup:
         t *= buildup(energies, material, thickness)
@@ -276,7 +282,8 @@ def attenuation(energy_keV, material, thickness):
     a = np.exp(-u_linear(energy_keV, material) * thickness)
 
     msg = 'Material: %s Thickness: %s Energy: %s Attenuation %s'
-    ps.logger.debug(msg, material, thickness, energy_keV, attenuation)
+    if DEBUG:
+        ps.logger.debug(msg, material, thickness, energy_keV, attenuation)
     return a
 
 def buildup(energy_keV, material, thickness):
@@ -291,7 +298,7 @@ def buildup(energy_keV, material, thickness):
     """
 
     try:
-        table = ps.RESOURCES[ps.BUILDUP][material]
+        table = ps.config.get_setting(ps.BUILDUP)[material]
     except NameError:
         print(material + ' not in buildup table!')
         raise NameError
@@ -307,11 +314,11 @@ def buildup(energy_keV, material, thickness):
     n_mfp_i     = number_mean_free_path(energy_keV, material, thickness)
     interp_func = interp.interp2d(energies, n_mfp, factors, kind='linear')
     factor      = interp_func(energy_MeV, n_mfp_i)[0]
-
-    ps.logger.debug('Buildup factor:  ' + str(factor))
-    ps.logger.debug('Material: '        + str(material))
-    ps.logger.debug('Thickness: '       + str(thickness))
-    ps.logger.debug('Energy: '          + str(energy_MeV))
+    if DEBUG:
+        ps.logger.debug('Buildup factor:  ' + str(factor))
+        ps.logger.debug('Material: '        + str(material))
+        ps.logger.debug('Thickness: '       + str(thickness))
+        ps.logger.debug('Energy: '          + str(energy_MeV))
 
     return factor
 
@@ -328,6 +335,23 @@ def number_mean_free_path(energy_keV, material, thickness):
 
     return thickness * u_linear(energy_keV, material)
 
+def u_mass(energy_keV, material):
+    try:
+        table = ps.config.get_setting(ps.ATTENUATION)[material]
+    except NameError:
+        print(material + ' not in attenuation table!')
+        raise NameError
+
+    energies = np.array(table[ps.ENERGY_MeV])
+
+    mu_p = np.array(table[ps.MASS_ATTENUATION])
+    
+    interp_fcn = interp.interp1d(energies, mu_p)
+
+    mu_p_i = interp_fcn(energy_keV / 1e3)
+    
+    return mu_p_i
+
 def u_linear(energy_keV, material):
     """
     Args:
@@ -339,21 +363,12 @@ def u_linear(energy_keV, material):
       NameError if material is not defined in the pyshield recources
     """
 
-    try:
-        table = ps.RESOURCES[ps.ATTENUATION][material]
-    except NameError:
-        print(material + ' not in attenuation table!')
-        raise NameError
 
-    energies = np.array(table[ps.ENERGY_MeV])
-
-    mu_p = np.array(table[ps.MASS_ATTENUATION])
-
-    interp_fcn = interp.interp1d(energies, mu_p)
-
-    mu_p_i = interp_fcn(energy_keV / 1e3)
+    
     msg = 'Interpolated Mass attenuation coefficient {0}'
-    ps.logger.debug(msg.format(mu_p_i))
-    p = ps.RESOURCES[ps.MATERIALS][material][ps.DENSITY]
+    mu_p_i = u_mass(energy_keV, material)
+    if DEBUG:
+        ps.logger.debug(msg.format(mu_p_i))
+    p = ps.config.get_setting(ps.MATERIALS)[material][ps.DENSITY]
 
     return mu_p_i * p

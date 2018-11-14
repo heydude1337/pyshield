@@ -1,5 +1,221 @@
 # Pyshield
 
-Pyshield is a package for nuclear medicine departments to calculate the necessary
-amount of shielding.
+Pyshield is a package for nuclear medicine departments to calculate the 
+necessary amount of shielding for PET, SPECT, laboratories and therapy rooms.
+
+## Install
+
+pip install git+https://github.com/heydude1337/pyshield.git
+
+Python 3.5 or higher must be install on your system. 
+
+## Usage:
+usage:  [-h] [--execute | --getconfig GETCONFIG | --getexample]
+        [--grid | --points] [--config CONFIG] [--log {debug,info,error}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --execute             Do calculations
+  --getconfig GETCONFIG
+                        Creates a config file with all options set to default values.
+  --getexample          Create example files in current folder
+  --grid                Calculate dose maps on grid
+  --points              Calculate dose in defined points
+  --config CONFIG       Specify config file. config.yml will be loaded by default if present.
+  --log {debug,info,error}
+                        Specify log level
+
+## Examples
+
+pyshield --execute --points
+
+Runs calculations for specified dose points.:
+        barriers.yml: barrier defintions
+        sources.yml: source definitions
+        points.yml: points in which the dose is calculated
+
+pyshield --execute --grid --config myconfig.yml
+
+Calculate dosemaps and override settings from myconfig.yml.     
+        barriers.yml: barrier defintions
+        sources.yml: source definitions
+
+pyshield --getconfig myconfig.yml
+
+Creates myconfig.yml in current folder with all settings set to default.
+
+pyshield --getexample
+
+Create example files in current folder.
+
+## Configuration
+
+By default pyshield tries to load the file config.yml from the current 
+directory. The config file location can be overridden by the --config flag.
+For a full list of parameters that can be defined in the config file please
+use pyshield --getconfig myconfig.yml to obtain a file with all settings
+set to default. Each setting is explained in the comments of this file. If you
+create your own config file only parameters that have different values than
+default are needed to be defined.
+
+
+Most options are fine by default except  for the scaling and origin of the 
+floor plan. Create a configuration file or modify the config file
+as needed:
+
+scale: 3.1415
+origin: [100, 100]
+
+The parameter scale is defined in cm/pixel, how big is a pixel in your floor 
+plan image in cm. Origin can be set to an arbritary location in cm. In this 
+case the pixel at 100cm, 100cm will be point 0cm, 0cm. 
+
+## Inputs
+
+### floor_plan
+The floor plan should be supplied as an image and should be called 
+floor_plan.png by default. 
+
+
+### Barriers
+A barrier is defined by two points the materials and the thickness of these 
+materials. By default pyshield will load a barriers.yml file from the current
+folder to load the barrier definitions. An example of three barriers are shown
+below.
+
+MyLeadWall:
+  Location [cm]: [-50, 50, 50, 50]
+  Material [cm]:
+    Lead: 10
+  color: [255, 0, 255]
+MyLeadAndConcreteWall1:
+  Location [cm]: [-50, -50, -50, 50]
+  Material [cm]:
+    Lead: 10
+    Concrete: 50
+  Label: LeadConcrete
+MyLeadAndConcreteWall2:
+  Location [cm]: [50, 50, 50, -50]
+  Material [cm]:
+    Lead: 10
+    Concrete: 50
+  Label: LeadConcrete
+  color: red
+  
+First each barrier has a name which myst be unique for each barrier. 
+The location of the barrier is specified in cm: [x1, y1, x2, y2]. 
+The barrier is a line between (x1, y1) and (x2, y2). Each  barrier can consist 
+of one or more materials. Material thickness is again specified in cm. 
+
+Optionally a Label can be specified. Multiple barriers can have the same label.
+This label is shown in the legend of the images. The walls are drawn by 
+default as blue lines in the output images. The color can be set by the color 
+option in rgb or any valid matplotlib color name'
+
+### Sources
+A source is defined in a single point. 
+
+MySource1:
+  Activity [MBq]: 100
+  Decay correction: true
+  Duration [h]: 1
+  Isotope: F-18
+  Location [cm]: [0, 0]
+  Number of exams: 1500
+MySource2:
+  Activity [MBq]: 20000
+  Decay correction: true
+  Duration [h]: 0.5
+  Isotope: F-18
+  Location [cm]: [100, 100]
+  Number of exams: 150
+  Material [cm]:
+    Lead: 1
+    
+Most parameters are straight forward. Each source has a name that should be
+unique as well. Decay correction can be always set to true. It takes the 
+decay of the source during the time the source is present.
+
+Optionally a material can be specified around the source. This can take local
+shielding ito account which is always present for this source. For example when
+the source is kept in a lead container.
+
+### Points
+
+Points are the locations for which the dose is calculated when using the 
+--points flag. 
+
+MyPoint1:
+  Location [cm]: [25, 25]
+  OCCUPANCY_FACTOR: 0.25
+
+Location is the location of the source and an occupancy factor can be defined
+which is the fraction of time that personnel is present at this location.
+
+## Output
+
+Output is generated by default in ./output. An excel file is created,
+result.xlsx by default and several images are created.
+
+### Excel
+An excel file is generated that contains a table with all properties of the
+sources. This table is shown on tab 'source_table'. It has the same information 
+as in the sources.yml file.
+
+If the --points flag is used, two additional tables/tabs are created. 
+
+sum_table: Shows the total dose in each defined point with and without
+correction for occupance.
+
+table: Shows intermadiate calculation results for each calculation between a 
+source and a point. For example the total amount of calculated material 
+between MySource1 and MyPoint1 can be found here. This table is useful to 
+check when you are not sure about your calculations. 
+
+
+### Images
+
+floor_plan.png shows the shielding as an overlay on the original floor_plan.
+
+sources.png: Shows the location of the defined sources
+
+points.png: Shows the location of the defined points
+
+sum_sources.png Shows a heatmap with iso contours on top of the floor_plan.
+This file is generated when --grid flag is used.
+
+## Visualization
+
+Settings for showing the results can be changed by editing the 
+visualization.yml file in the pyshield install folder.
+
+
+## Running from within IPython/Spyder
+
+Just do:
+
+import pyshield
+
+pyshield.run()
+or
+pyshield.run(calculate='grid')
+or
+pyshield.run(calculate='points')
+etc.
+
+### tools
+
+Quickly define points on a figure:
+
+pyshield.tools.drawing.points
+
+Quickly define barriers on a figure:
+
+pyshield.tools.drawing.barrier
+
+copy/paste the output to your yml files
+
+
+
+
 

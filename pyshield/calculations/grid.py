@@ -22,13 +22,12 @@ def calculate_dose_map_for_source(source):
     ps.logger.debug('Material:  %s', source.get(ps.MATERIAL, {}))
 
 
-    shielding = ps.config.get_setting(ps.SHIELDING)
+    barriers = ps.config.get_setting(ps.BARRIERS)
 
-    part_config_items = (
-                         ps.FLOOR,
+    part_config_items = (ps.FLOOR,
                          ps.HEIGHT,
                          ps.DISABLE_BUILDUP,
-                         ps.PYTHAGORAS)
+                         ps.INTERSECTION_THICKNESS)
 
     kwargs = dict([(key, ps.config.get_setting(key)) for key in part_config_items])
 
@@ -41,7 +40,7 @@ def calculate_dose_map_for_source(source):
 
     calc_dose = lambda loc: calc_dose_source_at_location(source,
                                                          loc,
-                                                         shielding,
+                                                         barriers,
                                                          **kwargs)
     # obtain grid points for the specified source
     points, grid = grid_points(source)
@@ -145,11 +144,14 @@ def polar_points(r_spacing, n_angles=100, origin=(0, 0), span=(10, 10),
 
     points = np.stack((X.flatten(), Y.flatten())).T
 
-
-
     return points
 
-#
+def sum_dose_maps(dose_maps):
+    """ sum a collection of dose maps to obtain the total dose """
+    ps.logger.debug('Summing %s dose_maps', len(dose_maps))
+    dose_maps = np.stack(dose_maps)
+    return np.nansum(dose_maps, axis=0)
+
 
 if __name__ == "__main__":
   import matplotlib.pyplot as plt

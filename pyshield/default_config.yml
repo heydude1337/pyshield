@@ -1,23 +1,28 @@
-# input dict or yml file
+# WARNING DO NOT ADD OR REMOVE ENTRIES. TO USE YOUR OWN CONFIGURATION PLEASE
+# RUN: pyshield.run(config=my_config.yml)
 
 log: 'debug'               # set to debug or info
 
+# =============================================================================
+# Floor plan
+# =============================================================================
+floor_plan: floor_plan.png  # Floor plan of the room/facility
+scale: 1                    # scale of floor plan in cm/pixels
+origin: [0, 0]              # arbritrary origin in floor plan in cm
+ 
 #==============================================================================
 # Calculations options
 #==============================================================================
-pythagoras: True          # True or False
-disable_buildup: False    # if True buildup is set 1 for all calculations
-multi_cpu: True           # Divide workload over the available CPU cores
-grid_size: 10             # grid spacing for cartesian grid or radial sampling for polor grid
-number_of_angles: 90      # angles used for sampling polar grid
-grid: polar               # cartesian or polar grid
-calculate:                # calculate on grid or specified points or both
+intersection_thickness: True  # calculate effective barrier thickness for oblique intersections
+disable_buildup: False        # if True buildup is set 1 for all calculations
+multi_cpu: True               # Divide workload over the available CPU cores
+grid_size: 10                 # grid spacing for cartesian grid or radial sampling for polor grid
+number_of_angles: 90          # angles used for sampling polar grid
+grid: polar                   # cartesian or polar grid
+calculate:                    # calculate on grid or specified points, both or none
   - grid
   - points
-scale: 1                  # scale of floor plan in cm/pixels
-origin:                   # arbritrary origin in floor plan in cm
- - 0
- - 0
+
 
 #==============================================================================
 #  Input and output for calculations
@@ -35,32 +40,17 @@ sources: sources.yml        # source definitions
 # simulate a floor by specifying this as a barrier
 # e.g. floor:
 #        Concrete: 20
-#  Simunlates a 20 cm concrete floor
+#  Simunlates a 20 cm concrete floor by adding 20cm concrete around each source
 floor: {}
 
 height: 0  # Use in conjuction with floor, this specifies the distance to the other
-# floor from the source
-
-export_dir: './output/'
+# floor from the source. Distance will be corrected 
 
 #==============================================================================
 #  Display options
 #==============================================================================
-clim_heatmap:             # Limits for the colorscale of the heatmap in mSv
-  - 0
-  - 10
-colormap: afmhot          # colormap for heatmap
-
-isocontour_lines:         # mSv vs any valid matplotlib color
-  0.1: lightgreen
-  0.3: darkgreen
-  0.4: lightblue
-  1.2: darkblue
-  1.67: red
-  4: darkred
-  5: magenta
-  12: darkmagenta
-
+ 
+    
 # sum_sources: Show a dose map of the summed contributions of all sources
 # all_sources: Show a dose map of each individual source
 # sources: Show the floorplan with labels for each source
@@ -69,8 +59,7 @@ isocontour_lines:         # mSv vs any valid matplotlib color
 # sum_table: display formatted table in (i)python console
 show: ['sum_sources', 'floor_plan', 'sources', 'points', 'sum_table']
 
-material_colors: colors.yml # File that specifies the colors for the barriers
-floor_plan: floor_plan.png  # Floor plan of the room/facility
+
 
 #==============================================================================
 # Export options
@@ -79,5 +68,15 @@ floor_plan: floor_plan.png  # Floor plan of the room/facility
 # Files are saved in the current working directory
 export_excel: True
 export_images: True
-excel_filename_summary: summed_result.xlsx
-excel_filename_fullresult: full_result.xlsx
+export_dir: './output/'
+excel_filename: result.xlsx
+
+
+# resources, physics data used in calculations
+attenuation: $pyshield_folder$/physics/attenuation.xlsx
+buildup: $pyshield_folder$/physics/buildup.xlsx
+isotopes: $pyshield_folder$/physics/isotopes.yml
+materials: $pyshield_folder$/physics/materials.yml
+
+# display settings
+visualization: $pyshield_folder$/visualization.yml

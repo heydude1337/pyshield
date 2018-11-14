@@ -7,51 +7,87 @@ config file are shown as well.
 
 Last Updated 05-02-2016
 """
-
+import pyshield as ps
 import numpy as np
 import pyshield
-import traceback
+import yaml
 from matplotlib import pyplot as plt
-import pyshield as ps
+from tkinter import messagebox
+import logging
 
+DEBUG = False
 
-# Default Visualisation options
-WALL_COLOR            = 'b'
-WALL_LINE_STYLE       = '-'
-WALL_THICKNESS_SCALE  = 0.1
-SOURCE_COLOR          = 'r'
-SOURCE_SHAPE          = 'o'
-LEGEND_LOCATION       = 4
-POINT_COLOR           = 'b'
-POINT_SHAPE           = 'o'
-LABEL_TEXT_SIZE       = 10
-DEFAULT_ALIGNMENT     = 'top left'
-FIG_SIZE              = [15, 15]
+def styles():
+    # get copy of viz settings so that local changes don't update 
+    # global settings
+    return ps.config.get_setting(ps.VISUALIZATION, {}).copy()
 
-def sum_dose_maps(dose_maps):
-    """ sum a collection of dose maps to obtain the total dose """
-    ps.logger.debug('Summing %s dose_maps', len(dose_maps))
-    dose_maps = np.stack(dose_maps)
-    return np.nansum(dose_maps, axis=0)
-
-
-def barrier_color(barrier):
-    """ Determine color for barrier (lookup in the materials colors dict) """
-
-    colors    = ps.config.get_setting(ps.MATERIAL_COLORS)
-    material  = list(barrier[ps.MATERIAL].keys())[0]
-    thickness = barrier[ps.MATERIAL][material]
-
-    try:
-        color = colors[material][thickness]
-    except KeyError:
-        color = WALL_COLOR
-
+def format_color(color):
+    # Colors can be specified as 8-bit, mpl expects values between 0 and 1
     if type(color) in (tuple, list) and len(color) == 3:
         #rgb color
         color = [c/255 for c in color]
-
     return color
+
+def item_style(item, item_type=''):
+    style = styles()[item_type]
+    # override default style for each barrier if keys are specified for that 
+    # barrier.
+    for key in style.keys():
+        if key in item.keys():
+            style[key] = item[key]
+            
+    if ps.COLOR in style.keys():
+        style[ps.COLOR] = format_color(style[ps.COLOR])
+    return style
+
+def barrier_style(barrier):
+    style = item_style(barrier, ps.BARRIER)
+    
+    # Label is used as legend label for matplotlib
+    if ps.LABEL not in style.keys():
+        label = '' 
+        for material, thickness in barrier[ps.MATERIAL].items():
+            if label != '':
+                label += '\n'
+            
+            label += material  + ': ' +  str(thickness) + ' cm'
+        style[ps.LABEL] = label        
+
+        
+    # Colors may be determined by material type or label
+    colors = style.get(ps.COLORS, {})
+
+    # default color
+    color = style[ps.COLOR] 
+    
+    # override with material and thickness specific colors
+    materials = barrier[ps.MATERIAL]
+    if len(materials) == 1:        
+        material = list(materials.keys())[0]
+        thickness = list(materials.values())[0]
+        thickness_color = colors.get(material, {})
+        color = thickness_color.get(thickness, color)
+        
+    # override with label color
+    color = colors.get(ps.LABEL, {}).get(style[ps.LABEL], color) 
+        
+    # format color 
+    if ps.COLOR in style.keys():
+        style[ps.COLOR] = format_color(color)
+    
+    return style
+
+def point_style(point):
+    style = item_style(point, ps.POINT)
+    style[ps.LABEL] = str(point)
+    return style
+
+def source_style(source):
+    style = item_style(source, ps.SOURCE)
+    style[ps.LABEL] = str(source)
+    return style
+    
 
 def calc_dose_at_point(point):
     """ Calculate the dose at a specific point """
@@ -64,13 +100,16 @@ def calc_dose_at_point(point):
 
     config = pyshield.RUN_CONFIGURATION
     config[ps.MULTI_CPU] = False
+    config[ps.LOG] = logging.ERROR
     config[ps.CALCULATE] = ps.POINTS
     config[ps.POINTS] = {'double click': {ps.LOCATION: point}}
     config[ps.SHOW] = []
     config[ps.EXPORT_EXCEL] = []
     config[ps.EXPORT_IMAGES] = []
+    
     # run all calculations
-    ps.logger.debug('Running with config %s', config)
+    if DEBUG:
+        ps.logger.debug('Running with config %s', config)
     result = pyshield.run(**config)
     ps.logger.info('Finished')
 
@@ -80,120 +119,93 @@ def show_floorplan(points = {}, sources = {}):
     """ Show shielding barriers on top of floor plan. """
     #get application data
     floor_plan = ps.config.get_setting(ps.FLOOR_PLAN)
-    shielding  = ps.config.get_setting(ps.SHIELDING)
+    barriers  = ps.config.get_setting(ps.BARRIERS)
 
     #==========================================================================
     #   Functions to help plotting
     #==========================================================================
 
-    def shielding_descr(name):
-        """ Return information about shielding when line is clicked """
-        materials = ''
-
-        for material, thickness in shielding[name][ps.MATERIAL].items():
-            if materials != '':
-                materials += '\n'
-            materials += material  + ': ' + str(thickness) + ' cm'
-
-
-        location = shielding[name][ps.LOCATION]
-        return (name, materials, location)
-
-    def source_descr(name):
-        """ Return information about source when point is clicked """
-        try:
-          text = 'Isotope: {isotope} \nEquivalent Activity: {activity}'
-          source = sources[name]
-
-          activity = ps.isotope.equivalent_activity(source)
-          text = text.format(isotope=source[ps.ISOTOPE],
-                             activity='{0} MBq'.format(np.round(activity)))
-        except:
-          traceback.print_exc()
-        return name, text
-
-
     def figure_click(event):
         """ Calculate dose at mouse position on double click and display. """
         result = None
-        ps.logger.debug('Figure click %s', event)
+        if DEBUG:
+            ps.logger.debug('Figure click %s', event)
         dose = None
         if event.dblclick:
-            ps.logger.debug('double click')
-            ps.logger.debug(str(event))
-            #try:
+            if DEBUG:
+                ps.logger.debug('double click')
+                ps.logger.debug(str(event))
+       
             result = calc_dose_at_point((event.xdata, event.ydata))
-            #except:
-            #    print('Error during point calculation!')
-            #    traceback.print_exc()
-
-            # print('{0}'.format(result))
+           
             dose = result[ps.SUM_TABLE][ps.DOSE_MSV][0]
-            print('Total Dose: {0}'.format(dose))
-            # result.to_excel('output.xslx')
+            messagebox.showinfo(title='caclulation',
+                                message='Total Dose: {0}'.format(dose))
+
         return dose
 
     def object_click(event):
         """Callback for mouse click on object (source or shielding) """
 
-        obj_name = event.artist.name
+        name = event.artist.name
 
-        if obj_name in shielding.keys():
-            # shielding item clicked
-            msg = 'Barrier: {0}\nShielding: {1}\nAt location: {2}'
-            print(msg.format(*shielding_descr(obj_name)))
-        elif obj_name in sources.keys():
-            name, text = source_descr(obj_name)
-            print('Source: {0}\n{1}'.format(name, text))
+        if name in barriers.keys():
+            title = ps.BARRIER
+            item = barriers[name]
+        elif name in sources.keys():
+            title = ps.SOURCE
+            item = sources[name]
+        elif name in points.keys():
+            title = ps.POINT
+            item = points[name]
         else:
-            raise KeyError
-
-
-
+            if DEBUG:
+                ps.logger.debug('Unknown name %s', name)
+            item = None
+        if item:
+            item[ps.NAME] = name # add name to output window
+            messagebox.showinfo(title=title,
+                                message=yaml.dump(item))
+            
         return True
 
-    def draw_thickness(barrier):
-        """ Barrier thickness weighted by density """
-        d = 0
-        for material, thickness in barrier[ps.MATERIAL].items():
-            density = ps.RESOURCES[ps.MATERIALS][material][ps.DENSITY]
-            d += (thickness * density)
-        return 30 # d
 
     def draw_barriers(barriers):
         def draw_barrier(name, barrier):
-
-            ps.logger.debug('start drawing %s', name)
+            style = barrier_style(barrier)
+            style[ps.NAME] = name
+            if DEBUG:
+                ps.logger.debug('start drawing %s', name)
+            
             location = np.array(barrier[ps.LOCATION])
-
-            linewidth = draw_thickness(barrier) * WALL_THICKNESS_SCALE
-
-            color = barrier_color(barrier)
-
-
-
-            label = shielding_descr(name)[1]
+            
             _, labels = plt.gca().get_legend_handles_labels()
 
-            if label in labels:
+            if style[ps.LABEL] in labels:
                 # if label already in the lagend do nat add
                 label = None
-            msg = 'Adding %s with thickness %s and color %s'
-            ps.logger.debug(msg, label, linewidth, color)
+            else:
+                label = style[ps.LABEL]
+                
+            if DEBUG:
+                msg = 'Adding %s with style %s'
+                ps.logger.debug(msg, name, str(style))
 
             l = [[location[0], location[2]], [location[1], location[3]]]
-            ps.logger.debug('at location %s', l)
-
+            
+            
+            if DEBUG:
+                ps.logger.debug('at location %s', l)
+            
             line = plt.plot(*l,
-                            color     = color,
-                            linestyle = WALL_LINE_STYLE,
-                            linewidth = linewidth,
-                            picker    = linewidth,
+                            color     = style[ps.COLOR],
+                            linestyle = style[ps.LINE_STYLE],
+                            linewidth = style[ps.LINE_WIDTH],
+                            picker    = style[ps.LINE_WIDTH],
                             label     = label)[0]
 
-            ps.logger.debug(line)
+            
             line.name = name
-            # plt.show()
             return line
 
         lines = []
@@ -202,106 +214,88 @@ def show_floorplan(points = {}, sources = {}):
             lines += [line]
         return lines
 
-    def annotate(name, point, alignment = DEFAULT_ALIGNMENT):
-            DELTA = 20
-            offset = np.array((0, 0))
-            ha = 'center'
-            va = 'center'
-            if 'left' in alignment:
-                offset[0] -= DELTA
-                ha = 'right'
-            if 'right' in alignment:
-                offset[0] += DELTA
-                ha = 'left'
-            if 'top' in alignment:
-                offset[1] += DELTA
-                va = 'bottom'
-            if 'bottom' in alignment:
-                offset[1] -= DELTA
-                va = 'top'
-
-            plt.annotate(name, xy=point, xytext = offset,
-                         textcoords='offset points', ha=ha, va=va,
-                         bbox=dict(boxstyle='round,pad=0.5',
-                                   fc='yellow',
-                                   alpha=0.5),
-                         arrowprops=dict(arrowstyle = '->',
-                                         connectionstyle='arc3,rad=0'))
-
-    def draw_points(points):
-
-        def draw_point(name, point, alignment = DEFAULT_ALIGNMENT):
-
-            ps.logger.debug('Drawing %s at location %s and alignebt %s', name, point, alignment)
-
-
-
-            ps.logger.debug('Plotting point %s', name)
+    def annotate(item, style={}):            
+        DELTA = 20
+        offset = np.array((0, 0))
+        ha = 'center'
+        va = 'center'
+        if 'left' in style[ps.ALIGNMENT]:
+            offset[0] -= DELTA
+            ha = 'right'
+        if 'right' in style[ps.ALIGNMENT]:
+            offset[0] += DELTA
+            ha = 'left'
+        if 'top' in style[ps.ALIGNMENT]:
+            offset[1] += DELTA
+            va = 'bottom'
+        if 'bottom' in style[ps.ALIGNMENT]:
+            offset[1] -= DELTA
+            va = 'top'
+            
+        plt.annotate(style[ps.NAME], xy=item[ps.LOCATION], xytext = offset,
+                     textcoords='offset points', ha=ha, va=va,
+                     bbox=dict(boxstyle='round,pad=0.5',
+                               fc='yellow',
+                               alpha=0.5),
+                     arrowprops=dict(arrowstyle = '->',
+                                     connectionstyle='arc3,rad=0'))
+    
+    def draw_point(name, point, style):
+            style[ps.NAME] = name
+            if DEBUG:
+                ps.logger.debug('Drawing %s with value %s', name, str(point))
+                ps.logger.debug('Plotting point %s', name)
+            
             plot_fcn = lambda xy: plt.plot(*xy,
-                                           color  = POINT_COLOR,
-                                           marker = POINT_SHAPE,
+                                           color  = style[ps.COLOR],
+                                           marker = style[ps.MARKER],
                                            picker = 5)
 
-            p = plot_fcn(point)
-
-            annotate(name, point, alignment = alignment)
+            p = plot_fcn(point[ps.LOCATION])
+            p[0].name = name
+            annotate(point, style=style)
 
             return p
-
+        
+    
+    def _draw_points(points, item_type=ps.POINT):
         points_drawn = []
+        if item_type == ps.POINT:
+            styler = lambda point: point_style(point)
+        elif item_type == ps.SOURCE:
+            styler = lambda point: source_style(point)
+        
         for name, point in points.items():
-            location = point[ps.LOCATION]
-            alignment = point.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
-
-
-
-            points_drawn += [draw_point(name, location, alignment)]
-
+            style = styler(point)
+            if DEBUG:
+                ps.logger.debug('Plotting %s at %s with style %s', name, 
+                                str(point), str(style))
+            points_drawn += [draw_point(name, point, style)]
+            
         return points_drawn
 
-    def draw_sources(sources):
-      if sources is None or sources == {}:
-        ps.logger.warning('No Sources Defined!')
-        sources = {}
-
-      def draw_source(name, source, alignment = DEFAULT_ALIGNMENT):
-          ps.logger.debug('Plotting source %s', name)
-          plot_fcn = lambda xy: plt.plot(*xy,
-                                         color  = SOURCE_COLOR,
-                                         marker = SOURCE_SHAPE,
-                                         picker = 5)
-
-          location = np.array(source[ps.LOCATION])
-
-          p = plot_fcn(location)[0]
-          p.name = name
-
-          alignment = source.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
-          annotate(name, location, alignment = alignment)
-          # plt.show()
-
-          return p
-
-      points = []
-      for name, source in sources.items():
-          alignment = source.get(ps.ALIGNMENT, DEFAULT_ALIGNMENT)
-          p = draw_source(name, source, alignment)
-          points += [p]
-
-      return points
-
+    def draw_points(points):
+        if DEBUG:
+            ps.logger.debug('Drawing %s points', str(len(points)))
+        return _draw_points(points, item_type=ps.POINT)
+    
+    def draw_sources(points):
+        if DEBUG:
+            ps.logger.debug('Drawing %s sources', str(len(sources)))
+        return _draw_points(points, item_type=ps.SOURCE)
 
     # show floor plan
-    fig = plt.figure(figsize = FIG_SIZE)
+    fig = plt.figure(figsize = styles()[ps.FIGURE][ps.FIG_SIZE])
     plt.imshow(floor_plan, extent = get_extent(floor_plan), origin = 'lower')
 
-
-
+    if barriers:
+        draw_barriers(barriers) # plot shielding baririers
     if sources:
-        ps.logger.debug(sources.keys())
-    draw_barriers(shielding) # plot shielding baririers
-    draw_sources(sources)    # plot sources
-    draw_points(points)      # points
+        draw_sources(sources)    # plot sources
+    if points:
+        draw_points(points)      # points
+    
+    
     # sort and show legend
     box = plt.gca().get_position()
     plt.gca().set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -318,65 +312,59 @@ def show_floorplan(points = {}, sources = {}):
 
     fig.canvas.mpl_connect('pick_event', object_click)
     fig.canvas.mpl_connect('button_press_event', figure_click)
-
-    plt.show(block = False)
-
     return fig
 
 
 def plot_dose_map(dose_map=None, legend=None, title = ''):
     """ Plot a heatmap with isocontours on top of the floorplan wiht barriers """
-
-    clim = ps.config.get_setting(ps.CLIM_HEATMAP)
-    colormap = ps.config.get_setting(ps.COLORMAP)
+    
     floor_plan = ps.config.get_setting(ps.FLOOR_PLAN)
-    isocontour_lines = ps.config.get_setting(ps.ISOCONTOUR_LINES)
-
     extent=get_extent(floor_plan)
+    
+    style = styles()[ps.DOSE_MAP]
 
-    ps.logger.debug('clims: %s', clim)
-    ps.logger.debug('colormap: %s', colormap)
-
-    ps.logger.debug('loading floor_plan')
     fig = show_floorplan()
-    ps.logger.debug('floor_plan loaded')
-
 
     # show heatmap
     plt.imshow(dose_map,
                extent   = get_extent(floor_plan),
                origin   = 'lower',
                alpha    = 0.5,
-               clim     = clim,
-               cmap     = plt.get_cmap(colormap))
+               clim     = style[ps.CLIM],
+               cmap     = style[ps.COLOR_MAP])
 
     # show isocontours
     ps.logger.info('dose_map shape %s', dose_map.shape)
 
-    isocontours = np.array(list(isocontour_lines.keys()))
-    isocontour_colors = np.array(list(isocontour_lines.values()))
+    isocontours = np.array(list(style[ps.LINES].keys()))
+    isocontour_colors = np.array(list(style[ps.LINES].values()))
 
     isocontour_colors = isocontour_colors[isocontour_colors.argsort()]
     isocontours.sort()
-
-    ps.logger.debug('Isocontours: %s', str(isocontours))
-    ps.logger.debug('Isocontour_colors: %s', str(isocontour_colors))
+    if DEBUG:
+        ps.logger.debug('Isocontours: %s', str(isocontours))
+        ps.logger.debug('Isocontour_colors: %s', str(isocontour_colors))
 
     contour = plt.contour(dose_map, isocontours,
                           colors=isocontour_colors, extent=extent)
 
     # show isocontour value in line
-    plt.clabel(contour, inline=1, fontsize=LABEL_TEXT_SIZE)
+    plt.clabel(contour, inline=1, fontsize=style[ps.FONT_SIZE])
 
     # show legend for isocontours
     legend_labels = [str(value) + ' mSv' for value in isocontours]
 
-    plt.legend(contour.collections, legend_labels, loc=LEGEND_LOCATION)
+    legend_loc = styles()[ps.FIGURE][ps.LEGEND_LOCATION]
+    plt.legend(contour.collections, legend_labels, loc=legend_loc)
+    
     if legend is not None:
       plt.gca().add_artist(legend)
 
     plt.title(title)
     fig.canvas.set_window_title(title)
+    
+    
+    
     return fig
 
 
@@ -390,30 +378,22 @@ def show(results = {}):
     # make list for non lists
     if not isinstance(show_setting, (tuple, list)):
         show_setting = [show_setting]
-
-    ps.logger.debug('%s dose_maps loaded for visualization', len(results))
-    ps.logger.debug('Showing %s', show_setting)
+    
+    if DEBUG:
+        ps.logger.debug('%s dose_maps loaded for visualization', len(results))
+        ps.logger.debug('Showing %s', show_setting)
 
     figures = {}
 
     if ps.FLOOR_PLAN in show_setting:
         figures[ps.FLOOR_PLAN] = show_floorplan()
-
-    sources = ps.config.get_setting(ps.SOURCES)
-    points = ps.config.get_setting(ps.POINTS)
-    ps.logger.debug('%i sources found', len(sources))
-    ps.logger.debug('%i points found', len(points))
-    if sources and ps.SOURCES in show_setting\
-        and points and ps.POINTS in show_setting:
-        figures[ps.SOURCES]= show_floorplan(sources = sources, points=points)
-    elif sources and ps.SOURCES in show_setting:
-        figures[ps.SOURCES]= show_floorplan(sources = sources)
-    elif points and ps.POINTS in show_setting:
-        figures[ps.POINTS]= show_floorplan(points = points)
-    elif show_setting is not None:
-        figures[ps.FLOOR_PLAN]= show_floorplan()
-
-
+    if ps.SOURCES in show_setting:
+        sources = ps.config.get_setting(ps.SOURCES)
+        figures[ps.SOURCES] = show_floorplan(sources=sources)
+    if ps.POINTS in show_setting:
+        points = ps.config.get_setting(ps.POINTS)
+        figures[ps.POINTS] = show_floorplan(points=points)
+   
     if ps.SUM_SOURCES in show_setting or ps.ALL_SOURCES in show_setting:
         try:
             dose_maps = results[ps.DOSE_MAPS]
@@ -422,8 +402,8 @@ def show(results = {}):
             ps.logger.error('No dose maps found in results')
 
         if ps.SUM_SOURCES in show_setting and dose_maps:
-            summed_dose_map = sum_dose_maps(dose_maps.values())
-            figures[ps.FLOOR_PLAN] = plot_dose_map(summed_dose_map,
+            summed_dose_map = results[ps.DOSE_MAPS][ps.SUM_SOURCES]
+            figures[ps.SUM_SOURCES] = plot_dose_map(summed_dose_map,
                    title = ps.SUM_SOURCES)
 
         if ps.ALL_SOURCES in show_setting and dose_maps:
@@ -431,14 +411,12 @@ def show(results = {}):
                 ps.logger.info('plotting %s', source)
                 figures[source] = plot_dose_map(dose_map, title = source)
 
-
     return figures
 
 
 def get_extent(floorplan):
     """ Return boundaries of the image in physical coordinates """
 
-    ps.logger.debug(ps.config.__str__())
     origin = ps.config.get_setting(ps.ORIGIN)
     scale = ps.config.get_setting(ps.SCALE)
 

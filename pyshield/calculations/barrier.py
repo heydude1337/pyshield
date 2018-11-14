@@ -10,12 +10,11 @@ import math
 
 
 import pyshield as ps
-#from pyshield.calculations.line_intersect import intersect_line, angle_between_lines
+DEBUG = False # supress debugging, lots of text output
 
-
-def sum_shielding_line(source_location, location, shielding, pythagoras = True):
+def sum_shielding_line(source_location, location, shielding, intersection_thickness = True):
     """ Calculates the amount of shielding between two points source_location
-        and location. Shielding is a dictopnary. If pythagoras is True the
+        and location. Shielding is a dictopnary. If intersection_thickness is True the
         total effective thickness is calculated by taking the angle of
         intersection into account. Returns a dictionary:
 
@@ -34,7 +33,8 @@ def sum_shielding_line(source_location, location, shielding, pythagoras = True):
 
     #iterate over shielding all defined barriers,
     for name, barrier in shielding.items():
-        ps.logger.debug('Intersection %s?', name)
+        if DEBUG:
+            ps.logger.debug('Intersection %s?', name)
         location = np.array(barrier[ps.LOCATION])
 
 
@@ -55,10 +55,11 @@ def sum_shielding_line(source_location, location, shielding, pythagoras = True):
 
         if not(None in p) and not(np.NaN in p) and not p in points:
             points.append(p) # valid intersection at point p
-            ps.logger.debug('Intersection at: ' + str(p))
+            if DEBUG:
+                ps.logger.debug('Intersection at: ' + str(p))
 
             # calculate the angle of intersection or assume 90 degrees
-            if pythagoras:
+            if intersection_thickness:
                 theta = ps.line_intersect.angle_between_lines(L0, L1)
             else:
                 theta = 0.5 * math.pi
@@ -74,7 +75,8 @@ def sum_shielding_line(source_location, location, shielding, pythagoras = True):
                 # add effective thickness for material
                 eff_thickness =  thickness / math.sin(theta)
                 shielding_line[material] += eff_thickness
-                ps.logger.debug('Eff. Thickness of barrier: %s', eff_thickness)
+                if DEBUG:
+                    ps.logger.debug('Eff. Thickness of barrier: %s', eff_thickness)
 
     return shielding_line
 

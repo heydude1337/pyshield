@@ -13,12 +13,25 @@ import yaml
 
 import pyshield as ps
 
-VALID_EXTENSIONS = ('.yml', '.yaml', 'xls', 'xlsx',
-                    'png', 'jpeg', 'jpg', 'bmp')
 
-
-RESOURCES = {}
-
+def load_item(item):
+    """ Load yaml, image or excel or return value as is. """
+    if isinstance(item, str):
+        if is_yaml(item):
+            try:
+                item = read_yaml(item)
+            except FileNotFoundError:
+                item = {}
+        if is_img(item):
+            item = read_img(item)
+        if is_excel(item):
+            item = read_excel(item)
+    
+    if isinstance(item, dict):
+        return dict(zip(item.keys(), map(load_item, item.values())))
+    else:
+        return item
+    
 def _file_ext(file):
     return path.splitext(file)[1].lower()
 
@@ -34,7 +47,16 @@ def is_excel(file):
     XLS = ('.csv', '.xls', '.xlsx')
     return isinstance(file, str) and _file_ext(file) in XLS
 
+def read_excel(file):
+    return pd.read_excel(file, sheet_name=None)
+
+def read_img(file):
+    return np.flipud(mpimg.imread(file))
+
 def read_yaml(file):
+    """ 
+    Read yaml file and include files that are defined with the INCLUDE tag
+    """
     if not is_yaml(file):
         raise IOError('File {0} is not a yaml file'.format(file))
 
@@ -71,55 +93,6 @@ def read_yaml(file):
 def write_yaml(file_name, dict_obj):
     stream = open(file_name, 'w')
     yaml.dump(dict_obj, stream=stream, default_flow_style=False)
-
-
-
-def read_resources():
-    """ read resource files and add to pyshield data """
-    #resource files are defined in the yml file in the package root
-
-    files =  read_yaml(path.join(ps.__pkg_root__, ps.RESOURCE_FILE))
-
-    # read resource files either yaml or in excel format for buildup
-    data = {}
-
-    resource_dir = path.join(ps.__pkg_root__, 'resources')
-
-    for key, file in files.items():
-
-        full_file = path.join(resource_dir, file)
-        ps.logger.debug('Loading resource {0}'.format(full_file))
-        data[key] = load_file(full_file)
-
-
-    RESOURCES.update(data)
-
-    return data
-
-def load_file(file):
-    """ read file from disk (.yml, .xls/.xlsx and images) """
-    if not path.exists(file):
-        raise FileNotFoundError
-
-    ps.logger.debug('Loading: %s', file)
-
-
-    if is_yaml(file):
-        reader = read_yaml
-    elif is_excel(file):
-        reader = lambda f: pd.read_excel(f, sheet_name=None)  # read all sheets
-    elif is_img(file):
-        reader = lambda f: np.flipud(mpimg.imread(f))
-    else:
-        raise TypeError
-
-    # try:
-    data = reader(file)
-#    except:
-#        raise IOError('Could not read file {0}'.format(file))
-
-    return data
-
 
 
 

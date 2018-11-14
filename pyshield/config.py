@@ -1,59 +1,38 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from os.path import join
-
 import pyshield as ps
-
-
-
 
 CONFIG = {}
 
 KEY_ERROR = '{0} is not a valid key for setting items'
 
-SKIP_READING_FILES_ON_START = [ps.EXCEL_FILENAME_FULLRESULT,
-                               ps.EXCEL_FILENAME_SUMMARY]
+SKIP_READING_FILES_ON_START = [ps.EXCEL_FILENAME]
 
-VALID_CONFIG =  (ps.EXPORT_DIR,
-                 ps.NANGLES,
-                 ps.GRID,
-                 ps.GRIDSIZE,
-                 ps.PYTHAGORAS,
-                 ps.CLIM_HEATMAP,
-                 ps.COLORMAP,
-                 ps.DISABLE_BUILDUP,
-                 ps.MULTI_CPU,
-                 ps.ISOCONTOUR_LINES,
-                 ps.SHOW,
-                 ps.SAVE_IMAGES,
-                 ps.IMAGE_DPI,
-                 ps.CALCULATE,
-                 ps.LOG,
-                 ps.FLOOR,
-                 ps.POINTS,
-                 ps.SOURCES,
-                 ps.SHIELDING,
-                 ps.POINTS,
-                 ps.FLOOR_PLAN,
-                 ps.MATERIAL_COLORS,
-                 ps.SCALE,
-                 ps.ORIGIN,
-                 ps.HEIGHT,
-                 ps.EXPORT_EXCEL,
-                 ps.EXCEL_FILENAME_FULLRESULT,
-                 ps.EXCEL_FILENAME_SUMMARY,
-                 ps.EXPORT_IMAGES)
+_defaults_file = join(ps.__pkg_root__, ps.DEF_CONFIG_FILE)
 
+VALID_CONFIG = tuple(ps.io.read_yaml(_defaults_file).keys())
+
+DEBUG = False
 
 def __str__():
      config_str = 'Pyshield Configuration:'
      config_keys = sorted(CONFIG.keys())
+     formatter = '\n {0:<20} {1:<20}'
      for key in config_keys:
-        config_str += '\n {0:<20} {1:<20}'.format(key, str(CONFIG[key]))
+         if key in (ps.BARRIERS, ps.SOURCES, ps.POINTS):
+             value = str(len(CONFIG[key])) + ' items'
+             config_str += formatter.format(key, value)
+         elif key in (ps.FLOOR_PLAN,):
+             value = 'Size: ' + str(CONFIG[key].shape) 
+             config_str += formatter.format(key, value)
+         elif key in (ps.BUILDUP,ps.ATTENUATION, ps.ISOTOPES, ps.MATERIALS):
+             value = str(tuple(CONFIG[key].keys()))
+             config_str += formatter.format(key, value)
+                
+         else:
+             config_str += '\n {0:<20} {1:<20}'.format(key, str(CONFIG[key]) )
      return config_str
-
-
-
 
 def load_defaults():
     """ Load default preferences from disk """
@@ -63,9 +42,12 @@ def load_defaults():
 
     settings = ps.io.read_yaml(join(ps.__pkg_root__, ps.DEF_CONFIG_FILE))
 
-    for setting, value in settings.items():
-        set_setting(setting, value)
-    return
+    for key in settings.keys():
+        if key not in VALID_CONFIG:
+            raise KeyError(KEY_ERROR.format(key))
+        else:
+            settings[key] = set_setting(key, settings[key])
+    return settings
 
 def _is_setting(key):
     # return true if it is a valid setting for pyshield
@@ -85,35 +67,36 @@ def get_config():
 
 def set_setting(key, value):
     """ Set a setting for the pyshield package. """
-    ps.logger.debug('Setting setting %s with value %s', key, str(value))
+    if DEBUG:
+        ps.logger.debug('Setting setting %s with value %s', key, str(value))
     if not _is_setting(key):
         raise KeyError(KEY_ERROR.format(key))
+    
+    if isinstance(value, str):
+        if ps.PKG_ROOT_MACRO in value:
+            value = value.replace(ps.PKG_ROOT_MACRO, ps.__pkg_root__)
 
-    if not isinstance(value, str):
-        CONFIG[key] = value
-    elif ps.io.is_yaml(value):
+    if ps.io.is_img(value):
         try:
-            value = ps.io.read_yaml(value)
-        except FileNotFoundError:
-            ps.logger.debug('File not found: %s', value)
-            value = {}
-        CONFIG[key] = value
-    elif ps.io.is_img(value):
-        try:
-            CONFIG[key] = ps.io.load_file(value)
+            value = ps.io.read_img(value)
         except FileNotFoundError:
             value = np.zeros((10,10))
+    elif ps.io.is_excel(value):
+        if key not in SKIP_READING_FILES_ON_START:
+            value = ps.io.read_excel(value)
     elif key == ps.CALCULATE:
         # HACK compatibility calculations mus be a list in newer pyshield version
-        CONFIG[key] = [value]
-
+        value = [value] if not isinstance(value, list) else value
+    elif key == ps.SHOW:
+        value = [] if value == False else value
     else:
-        CONFIG[key] = value
+        value = ps.io.load_item(value)
+    CONFIG[key] = value
 
 def get_setting(key = None, default_value = None):
     """ Get a setting for the pyshield package. """
-
-    ps.logger.debug('Setting {%s requested', key)
+    if DEBUG:
+        ps.logger.debug('Setting {%s requested', key)
 
     if not _is_setting(key) and key is not None:
         raise KeyError(KEY_ERROR.format(key))

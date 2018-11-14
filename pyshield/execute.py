@@ -10,7 +10,7 @@ import os
 from timeit import default_timer as timer
 import pandas as pd
 from natsort import index_natsorted
-
+import matplotlib.pyplot as plt
 import pyshield as ps
 
 NCORES = multiprocessing.cpu_count()
@@ -25,7 +25,7 @@ def run_with_configuration(config=None, **kwargs):
     If no config file is specified, specific settings can be overriden by using
     keyword arguments. e.g. run_with_configuration(calculate=None) will
     disable calculations."""
-
+    
     if config is None:
         config = ps.CONFIG_FILE
 
@@ -45,97 +45,85 @@ def run_with_configuration(config=None, **kwargs):
     ps.logger.debug('Source file: %s', ps.config.get_setting('sources'))
     ps.logger.info('Working directory: %s', os.getcwd())
     # display all parameters in debug
-    ps.logger.debug(ps.config.__str__())
-
+    ps.logger.info(ps.config.__str__())
+    
     # save original config params
     ps.RUN_CONFIGURATION = ps.config.get_config()
 
     # map for single core or multiprocessing.pool.map for multi-core
     pool, worker = _get_worker()
 
-    dose_maps = None
-    sum_table = None
-    table     = None
-
-#    check_calc_settings() # raise value error on incorrect input
-
+    result = {} # gather calculation results
+    
     calc_setting = ps.config.get_setting(ps.CALCULATE)
 
     if ps.GRID in calc_setting and ps.config.get_setting(ps.SOURCES):
+        ps.logger.debug('Start grid calculations')
         # perform grid calculations
         dose_maps = grid_calculations(worker)
-
+        result[ps.DOSE_MAPS] = dose_maps
     if ps.POINTS in calc_setting and ps.config.get_setting(ps.POINTS):
+        ps.logger.debug('Start point calculations')
         # perform dose calculations
         table, sum_table = point_calculations(worker)
-
-
-    results = {ps.TABLE:     table,
-               ps.DOSE_MAPS: dose_maps,
-               ps.SUM_TABLE: sum_table}
-
-
-
-
+        result[ps.TABLE] = table
+        result[ps.SUM_TABLE] = sum_table
 
     # necessary for multi core
     if pool is not None:
         pool.terminate()
 
-     # display
-    results[ps.FIGURE] = ps.visualization.show(results)
-
+    # display
+    if ps.config.get_setting(ps.SHOW):
+          result[ps.FIGURE] = ps.visualization.show(result)
+          if ps.POINTS in ps.config.get_setting(ps.CALCULATE):
+              ps.export.print_dose_report(result)
+              
     # write results to disk if any
-    ps.export.export(results)
-    return results
-
-
-
-def dose_table(value_dict = None):
-    columns = (ps.SOURCE_NAME, ps.SOURCE_LOCATION, ps.POINT_NAME,
-               ps.POINT_LOCATION,ps.DOSE_MSV, ps.ISOTOPE,
-               ps.ACTIVITY_H, ps.H10, ps.SOURCE_POINT_DISTANCE,
-               ps.TOTAL_SHIELDING, ps.DISABLE_BUILDUP,
-               ps.PYTHAGORAS, ps.HEIGHT, ps.DOSE_MSV_PER_ENERGY)
-
-    table = pd.DataFrame(columns = columns)
-
-    if value_dict is not None:
-        for key, value in value_dict.items():
-            if key not in columns:
-                print(key)
-                raise KeyError
-            table[key] = [value]
-    return table
-
-
+    if ps.config.get_setting(ps.EXPORT_EXCEL):
+        ps.export.export_excel(result)
+        
+    if ps.FIGURE in result.keys() and ps.config.get_setting(ps.EXPORT_IMAGES):
+        ps.export.export_images(result)
+    
+    if ps.COMMAND_LINE and ps.FIGURE in result.keys():
+        # Do not exit and go back to cmd line which will close all figs
+        plt.show(block=True)
+    return result
 
 def point_wrapper(location):
+    """
+    Calculate dose at a specific location. Dose are calculated per source.
+    For each source an entry in a pandas table is created. 
+    """ 
+    
+    # get data from settings
+    height                 = ps.config.get_setting(ps.HEIGHT)
+    disable_buildup        = ps.config.get_setting(ps.DISABLE_BUILDUP)
+    intersection_thickness = ps.config.get_setting(ps.INTERSECTION_THICKNESS)
+    barriers               = ps.config.get_setting(ps.BARRIERS)
+    floor                  = ps.config.get_setting(ps.FLOOR)
+    sources                = ps.config.get_setting(ps.SOURCES)
 
-    table = dose_table()
-    height          = ps.config.get_setting(ps.HEIGHT)
-    disable_buildup = ps.config.get_setting(ps.DISABLE_BUILDUP)
-    pythagoras      = ps.config.get_setting(ps.PYTHAGORAS)
-    shielding       = ps.config.get_setting(ps.SHIELDING)
-    floor           = ps.config.get_setting(ps.FLOOR)
-    sources         = ps.config.get_setting(ps.SOURCES)
 
     calc_func = ps.calculations.isotope.calc_dose_source_at_location
-
+    
+    # iterate over all sources
+    rows = []
     for name, source in sources.items():
         result = calc_func(source, location[ps.LOCATION],
-                           shielding,
+                           barriers,
                            disable_buildup = disable_buildup,
-                           pythagoras = pythagoras,
+                           intersection_thickness = intersection_thickness,
                            height = height,
                            return_details = True,
                            floor = floor)
 
         result[ps.SOURCE_NAME] = name
-        row = dose_table(result)
-
-        table = pd.concat((table, row))
-    return table
+        #row = dose_table(result)
+        rows += [result]
+        
+    return pd.DataFrame(rows)
 
 
 def summary_table(table):
@@ -144,30 +132,27 @@ def summary_table(table):
                               index = [ps.POINT_NAME, ps.OCCUPANCY_FACTOR],
                               aggfunc = sum)
 
-
-  #summary = pd.DataFrame(summary).reset_index()
-
   # get sort order, natsorted gives 0,1,2,3,4,5,6,7,8,8, 10 instead of
   # 0, 1, 10,2, 20 etc.
-  #new_index = index_natsorted(summary[ps.POINT_NAME].values)
   new_index = index_natsorted(summary.index)
 
-  # summary = summary.iloc[new_index].reset_index()
-
+  # sort table by point name
   summary = summary.iloc[new_index]
-  #summary = summary.to_frame()
+  
   summary.reset_index(inplace = True)
 
   # add corrected dose for occupancy
   summary[ps.DOSE_OCCUPANCY_MSV] = summary[ps.DOSE_MSV] * \
-                                      summary[ps.OCCUPANCY_FACTOR]
-  import pickle
-  pickle.dump(summary, open('table2.pd', 'wb'))
+                                   summary[ps.OCCUPANCY_FACTOR]
+  
   return summary
 
 
 def point_calculations(worker):
-
+    """ 
+    Calculate doses for all points, use worker to execute calculations.
+    """
+    
     locations       = ps.config.get_setting(ps.POINTS)
     sources         = ps.config.get_setting(ps.SOURCES)
 
@@ -179,18 +164,22 @@ def point_calculations(worker):
     # actual calculations
     tables = list(worker(point_wrapper, locations.values()))
 
-    # add additional data for each point
+    # add location name and occupance factor to the table for each row
     location_names = locations.keys()
     for loc_name, table in zip(location_names, tables):
         table[ps.POINT_NAME] = loc_name
         try:
-            table[ps.OCCUPANCY_FACTOR] = locations[loc_name][ps.OCCUPANCY_FACTOR]
-        except KeyError:
-            table[ps.OCCUPANCY_FACTOR] = 1
+            occupancy = locations[loc_name][ps.OCCUPANCY_FACTOR]
+        except KeyError: # not defined set to 1 as default
+            occupancy = 1
+        
+        table[ps.OCCUPANCY_FACTOR] = occupancy
 
-    table = pd.concat(tables) # add everything together
-    summary = summary_table(table)
+    table = pd.concat(tables) # stitch rows together to create single table
+    summary = summary_table(table) # use a pivot table to get summarized result
+    
     ps.logger.info('\n-----Point calculations finished-----\n')
+    
     return table, summary
 
 def grid_wrapper(source_items):
@@ -212,22 +201,26 @@ def grid_calculations(worker):
 
 
     sources = ps.config.get_setting(ps.SOURCES)
-#    snames  = tuple(sources.keys())
-#    sources = tuple(sources.values())
-#    source_and_names = list(zip(snames, sources))
 
     ps.logger.info('\n-----Starting grid calculations-----\n')
+    
     start_time = timer()
 
     # do calculations
     results = tuple(worker(grid_wrapper, sources.items()))
+    
+    # sort calculations, dose map for each source
     results = dict(zip(sources.keys(), [r[0] for r in results]))
 
     end_time = timer()
     dtime = end_time - start_time
 
     ps.logger.info('It took {0} to complete the calculation'.format(dtime))
-
+    
+    # sum dose maps 
+    summed = ps.calculations.grid.sum_dose_maps(results.values())
+    results[ps.SUM_SOURCES] = summed
+    
     return results
 
 def _get_worker():
@@ -246,7 +239,8 @@ def _get_worker():
 
         pool = multiprocessing.ProcessPool(NCORES)
         worker = pool.map
-        ps.logger.info('---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'.format(NCORES))
+        msg = '---MULTI CPU CALCULATIONS STARTED with {0} cpu\'s---\n'
+        ps.logger.info(msg.format(NCORES))
 
     else:
         worker = map
